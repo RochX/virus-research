@@ -10,7 +10,10 @@
 
 using namespace std;
 
+typedef Eigen::Vector<float, 6> Vector6f;
 typedef Eigen::Matrix<float, 6, 6> Matrix6f;
+
+std::vector<Vector6f> generateOrbit(const Vector6f&, std::vector<Matrix6f>&);
 
 int main() {
     // initialize the generator matrices of the group ICO
@@ -41,7 +44,7 @@ int main() {
     std::cout << "B^3:\n" << B*B*B << std::endl << std::endl;
 
     // note that this "vector" is a C++ dynamic list, *not* the Eigen library vector.
-    vector<Matrix6f> ICO;
+    std::vector<Matrix6f> ICO;
     Matrix6f curr;
     ICO.push_back(ID);
     int element_id;
@@ -77,12 +80,53 @@ int main() {
         }
     }
 
-    cout << "ICO:\n";
-    for (Matrix6f m : ICO) {
-        //cout << m << endl << endl;
-        // outputs the matrix in a 1D view, row wise.
-        cout << m.reshaped<Eigen::RowMajor>().transpose() << endl;
-    }
-    cout << ICO.size() << endl;
+//    cout << "ICO:\n";
+//    for (Matrix6f m : ICO) {
+//        //cout << m << endl << endl;
+//        // outputs the matrix in a 1D view, row wise.
+//        cout << m.reshaped<Eigen::RowMajor>().transpose() << endl;
+//    }
+//    cout << ICO.size() << endl;
 
+    Matrix6f D;
+    D << 1,1,-1,-1,1,1,
+        1,1,1,-1,-1,1,
+        -1,1,1,1,-1,1,
+        -1,-1,1,1,1,1,
+        1,-1,-1,1,1,1,
+        1,1,1,1,1,1;
+    D *= 0.5;
+//    cout << D << endl;
+
+    // declare and initialize vectors which we will make orbits of
+    // s: the ICO orbit of s is the icosahedron (the particular 6D embedding we are working with)
+    // b: the ICO orbit of b is the dodecahedron (which is dual to the icosahedron which is why this vector by itself produces an SC lattice -- in fact, the specific SC lattice is D*sc where sc denotes our standard(fixed) simple cubic)
+    // f: the ICO orbit of f is the icosidodecahedron
+    Vector6f s, b, f;
+    s << 1, 0, 0, 0, 0, 0;
+    b << 1,-1,1,1,-1,1;
+    b *= 0.5;
+    f << 1,0,0,-1,0,0;
+    f *= 0.5;
+
+    std::vector<Vector6f> orbit_s, orbit_b, orbit_Dinvb, orbit_Dinvf;
+    orbit_s = generateOrbit(s, ICO);
+    orbit_b = generateOrbit(b, ICO);
+    orbit_Dinvb = generateOrbit(D.inverse()*b, ICO);
+    orbit_Dinvf = generateOrbit(D.inverse()*f, ICO);
+
+    for (Vector6f v : orbit_s) {
+        cout << v.transpose() << endl;
+    }
+}
+
+// function to generate orbit of a vector under a given group.
+std::vector<Vector6f> generateOrbit(const Vector6f &v, std::vector<Matrix6f> &G) {
+    std::vector<Vector6f> orbit;
+
+    for (const Matrix6f &g : G) {
+        orbit.emplace_back(g*v);
+    }
+
+    return orbit;
 }
