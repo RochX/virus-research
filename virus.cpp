@@ -15,13 +15,9 @@ typedef Eigen::Matrix<float, 6, 6> Matrix6f;
 int main() {
     // initialize the generator matrices of the group ICO
     Matrix6f A, B, ID;
-    ID << 1, 0, 0, 0, 0, 0,
-        0, 1, 0, 0, 0, 0,
-        0, 0, 1, 0, 0, 0,
-        0, 0, 0, 1, 0, 0,
-        0, 0, 0, 0, 1, 0,
-        0, 0, 0, 0, 0, 1;
+    ID = Matrix6f::Identity();
 
+    // A has order 2
     A << -1, 0, 0, 0, 0, 0,
         0, -1, 0, 0, 0, 0,
         0, 0, 0, 0, 1, 0,
@@ -29,6 +25,7 @@ int main() {
         0, 0, 1, 0, 0, 0,
         0, 0, 0, 1, 0, 0;
 
+    // B has order 3
     B << 0, -1, 0, 0, 0, 0,
         0, 0, -1, 0, 0, 0,
         1, 0, 0, 0, 0, 0,
@@ -82,7 +79,9 @@ int main() {
 
     cout << "ICO:\n";
     for (Matrix6f m : ICO) {
-        cout << m << endl << endl;
+        //cout << m << endl << endl;
+        // outputs the matrix in a 1D view, row wise.
+        cout << m.reshaped<Eigen::RowMajor>().transpose() << endl;
     }
     cout << ICO.size() << endl;
 
