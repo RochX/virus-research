@@ -14,6 +14,8 @@ typedef Eigen::Vector<float, 6> Vector6f;
 typedef Eigen::Matrix<float, 6, 6> Matrix6f;
 
 std::vector<Vector6f> generateOrbit(const Vector6f&, std::vector<Matrix6f>&);
+Matrix6f ICO_centralizer(float, float);
+bool check_ICO_centralizer(Matrix6f);
 
 int main() {
     // initialize the generator matrices of the group ICO
@@ -131,4 +133,19 @@ std::vector<Vector6f> generateOrbit(const Vector6f &v, std::vector<Matrix6f> &G)
     }
 
     return orbit;
+}
+
+Matrix6f ICO_centralizer(float z, float x) {
+    Matrix6f c;
+    c << z,x,-x,-x,x,x,
+        x,z,x,-x,-x,x,
+        -x,x,z,x,-x,x,
+        -x,-x,x,z,x,x,
+        x,-x,-x,x,z,x,
+        x,x,x,x,x,z;
+    return c;
+}
+
+bool check_ICO_centralizer(Matrix6f m) {
+    return m == ICO_centralizer(m(0,0), m(0,1));
 }
