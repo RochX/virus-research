@@ -2,10 +2,17 @@
 // Created by xavier on 6/13/2023.
 //
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <Eigen/Dense>
 #include <Eigen/LU>
-#include <chrono>
+#include <omp.h>
+
+#ifndef EIGEN_DONT_PARALLELIZE
+#define EIGEN_DONT_PARALLELIZE
+#endif
+
+#define NUM_THREADS 16
 
 using namespace std;
 
@@ -149,25 +156,44 @@ int main() {
     std::vector<Matrix6f> rank6matrices;
     Matrix6f m;
     m.setZero();
-    int rank;
-    // this part sucks because 6 nested for loops, but it's the simplest way to approach this
-    auto start_time = std::chrono::high_resolution_clock::now();
-    cout << "Starting nested loops...\n";
-    for (int first = 0; first < B0_choices[0].size(); ++first) {
-        for (int second = 0; second < B0_choices[1].size(); ++second) {
-            for (int third = 0; third < B0_choices[2].size(); ++third) {
-                for (int fourth = 0; fourth < B0_choices[3].size(); ++fourth) {
-                    for (int fifth = 0; fifth < B0_choices[4].size(); ++fifth) {
-                        for (int sixth = 0; sixth < B0_choices[5].size(); ++sixth) {
-                            m << B0_choices[0][first], B0_choices[1][second], B0_choices[2][third], B0_choices[3][fourth], B0_choices[4][fifth], B0_choices[5][sixth];
+    int currChecked;
 
-                            // check our matrix is of rank 6
-                            if (m.colPivHouseholderQr().rank() == 6) {
-                                rank6matrices.push_back(m);
-//                                if (rank6matrices.size() >= 100) {
-//                                    cout << first << "\t" << second << "\t" << third << "\t" << fourth << "\t" << fifth << "\t" << sixth << endl;
-//                                    goto doneloop;
-//                                }
+    // this part sucks because 6 nested for loops, but it's the simplest way to approach this
+    auto start_time = omp_get_wtime();
+    cout << "Starting nested loops...\n";
+
+    // try to do these loops in parallel
+    #pragma omp parallel num_threads(NUM_THREADS) private(m, currChecked) shared(B0_choices, rank6matrices, totalB0matrices, std::cout) default(none)
+    {
+        currChecked = 0;
+
+        // brute force approach
+        #pragma omp for collapse(6)
+        for (int first = 0; first < B0_choices[0].size(); ++first) {
+            for (int second = 0; second < B0_choices[1].size(); ++second) {
+                for (int third = 0; third < B0_choices[2].size(); ++third) {
+                    for (int fourth = 0; fourth < B0_choices[3].size(); ++fourth) {
+                        for (int fifth = 0; fifth < B0_choices[4].size(); ++fifth) {
+                            for (int sixth = 0; sixth < B0_choices[5].size(); ++sixth) {
+                                m << B0_choices[0][first], B0_choices[1][second], B0_choices[2][third], B0_choices[3][fourth], B0_choices[4][fifth], B0_choices[5][sixth];
+
+                                // check our matrix is of rank 6
+                                if (m.colPivHouseholderQr().rank() == 6) {
+                                    // TODO figure out how to do a reduction on a c++ vector...
+                                    #pragma omp critical
+                                    rank6matrices.push_back(m);
+                                }
+
+                                // get a sense of progress done using thread 0
+                                if (omp_get_thread_num() == 0) {
+                                    currChecked++;
+                                    if (currChecked % 1000 == 0) {
+                                        cout << "Thread 0 has checked:\t" << currChecked << " out of " << totalB0matrices/omp_get_num_threads() << endl;
+                                    }
+                                    else if (currChecked == totalB0matrices/omp_get_num_threads()) {
+                                        cout << "Thread 0 has checked:\t" << currChecked << " out of " << totalB0matrices/omp_get_num_threads() << endl;
+                                    }
+                                }
                             }
                         }
                     }
@@ -175,11 +201,10 @@ int main() {
             }
         }
     }
-//    doneloop:
     cout << "\nDone.\n";
-    auto current_time = std::chrono::high_resolution_clock::now();
+    auto current_time = omp_get_wtime();
 
-    std::cout << "Loop ran for: " << (current_time - start_time).count()/1000000000.0 << " seconds" << std::endl;
+    std::cout << "Loop ran for: " << (current_time - start_time) << " seconds" << std::endl;
 
 //    for (Matrix6f M : rank6matrices) {
 //        cout << M << endl << endl;
