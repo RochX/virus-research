@@ -46,13 +46,6 @@ int main() {
         0, 0, 0, 1, 0, 0,
         0, 0, 0, 0, 1, 0;
 
-    std::cout << "A:\n" << A << std::endl << std::endl;
-    std::cout << "B:\n" << B << std::endl << std::endl;
-
-    // check order of matrices;
-    std::cout << "A^2:\n" << A*A << std::endl << std::endl;
-    std::cout << "B^3:\n" << B*B*B << std::endl << std::endl;
-
     // note that this "vector" is a C++ dynamic list, *not* the Eigen library vector.
     std::vector<Matrix6f> ICO;
     Matrix6f curr;
@@ -85,18 +78,9 @@ int main() {
 
         // if ICO has 60 (unique) elements we're done
         if (ICO.size() == 60) {
-            cout << i << endl;
             break;
         }
     }
-
-//    cout << "ICO:\n";
-//    for (Matrix6f m : ICO) {
-//        //cout << m << endl << endl;
-//        // outputs the matrix in a 1D view, row wise.
-//        cout << m.reshaped<Eigen::RowMajor>().transpose() << endl;
-//    }
-//    cout << ICO.size() << endl;
 
     Matrix6f D;
     D << 1,1,-1,-1,1,1,
@@ -106,7 +90,6 @@ int main() {
         1,-1,-1,1,1,1,
         1,1,1,1,1,1;
     D *= 0.5;
-//    cout << D << endl;
 
     // declare and initialize vectors which we will make orbits of
     // s: the ICO orbit of s is the icosahedron (the particular 6D embedding we are working with)
@@ -131,11 +114,7 @@ int main() {
     append_vector(P_0, orbit_Dinvb);
     append_vector(P_0, orbit_Dinvf);
 
-    for (Vector6f v : orbit_s) {
-        cout << v.transpose() << endl;
-    }
-
-    // TODO: add the picking of linearly independent matrices from orbits and P_0
+    // create the list that holds all the possibilities for each column vector
     std::vector<std::vector<Vector6f>> B0_choices;
     B0_choices.push_back(orbit_s);
     B0_choices.push_back(orbit_Dinvb);
