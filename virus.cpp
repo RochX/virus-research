@@ -162,13 +162,23 @@ int main() {
     auto start_time = omp_get_wtime();
     cout << "Starting nested loops...\n";
 
+    Eigen::IOFormat CommaSepVals(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "", "");
+    ofstream fout ("B0_matrices.csv");
+    int totalrank6matricesB0 = 0;
+    if (!fout.is_open()) {
+        return -1;
+    }
+    else {
+        fout << "11, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36, 41, 42, 43, 44, 45, 46, 51, 52, 53, 54, 55, 56, 61, 62, 63, 64, 65, 66" << endl;
+    }
+
     // try to do these loops in parallel
-    #pragma omp parallel num_threads(NUM_THREADS) private(m, currChecked) shared(B0_choices, rank6matrices, totalB0matrices, std::cout) default(none)
+    #pragma omp parallel num_threads(NUM_THREADS) private(m, currChecked) shared(totalrank6matricesB0, CommaSepVals, fout, B0_choices, rank6matrices, totalB0matrices, std::cout) default(none)
     {
         currChecked = 0;
 
         // brute force approach
-        #pragma omp for collapse(6)
+        #pragma omp for collapse(6) reduction(+:totalrank6matricesB0)
         for (int first = 0; first < B0_choices[0].size(); ++first) {
             for (int second = 0; second < B0_choices[1].size(); ++second) {
                 for (int third = 0; third < B0_choices[2].size(); ++third) {
@@ -179,9 +189,12 @@ int main() {
 
                                 // check our matrix is of rank 6
                                 if (m.colPivHouseholderQr().rank() == 6) {
-                                    // TODO figure out how to do a reduction on a c++ vector...
                                     #pragma omp critical
-                                    rank6matrices.push_back(m);
+                                    fout << m.format(CommaSepVals) << endl;
+//                                    rank6matrices.push_back(m);
+
+                                    // count how many matrices we output
+                                    totalrank6matricesB0++;
                                 }
 
                                 // get a sense of progress done using thread 0
@@ -201,27 +214,14 @@ int main() {
             }
         }
     }
+    // finished with loop means we finished with file
+    fout.close();
     cout << "\nDone.\n";
     auto current_time = omp_get_wtime();
 
     std::cout << "Loop ran for: " << (current_time - start_time) << " seconds" << std::endl;
 
-    // output all rank 6 matrices to a csv file.
-    Eigen::IOFormat CommaSepVals(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "", "");
-    ofstream fout ("B0_matrices.csv");
-    if (fout.is_open()) {
-        cout << "Opened file, now outputting...\n";
-        fout << "11, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36, 41, 42, 43, 44, 45, 46, 51, 52, 53, 54, 55, 56, 61, 62, 63, 64, 65, 66" << endl;
-        for (const Matrix6f &M : rank6matrices) {
-            fout << M.format(CommaSepVals) << endl;
-        }
-        fout.close();
-        cout << "Done.\n";
-    }
-
-    // output total number of rank 6 matrices
-    cout << "Total number of rank 6 matrices in B_0 is:\t" << rank6matrices.size() << endl;
-
+    cout << "Total number of rank 6 matrices in B_0 is:\t" << totalrank6matricesB0 << endl;
 
 
     // TODO: add the picking of linearly independent matrices from orbits and P_1 (and make P_1)
