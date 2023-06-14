@@ -102,7 +102,7 @@ int main() {
     f << 1,0,0,-1,0,0;
     f *= 0.5;
 
-    std::vector<Vector6f> orbit_s, orbit_b, orbit_Dinvb, orbit_Dinvf, P_0;
+    std::vector<Vector6f> orbit_s, orbit_b, orbit_Dinvs, orbit_Dinvb, orbit_Dinvf, P_0, P_1;
     orbit_s = generateOrbit(s, ICO);
     orbit_b = generateOrbit(b, ICO);
     orbit_Dinvb = generateOrbit(D.inverse()*b, ICO);
@@ -126,8 +126,29 @@ int main() {
 
     fileOutputAllFullRankMatrices(B0_choices, "B0_matrices.csv", true);
 
+    // process of picking linearly independent matrices from P_1
+    orbit_s = generateOrbit(s, ICO);
+    orbit_b = generateOrbit(b, ICO);
+    orbit_Dinvs = generateOrbit(D.inverse()*s, ICO);
+    orbit_Dinvb = generateOrbit(D.inverse()*b, ICO);
+    orbit_Dinvf = generateOrbit(D.inverse()*f, ICO);
 
-    // TODO: add the picking of linearly independent matrices from orbits and P_1 (and make P_1)
+    append_vector(P_1, orbit_b);
+    append_vector(P_1, orbit_Dinvs);
+    append_vector(P_1, orbit_Dinvb);
+    append_vector(P_1, orbit_Dinvf);
+    append_vector(P_1, orbit_s);
+
+    // append choices for B1
+    std::vector<vector<Vector6f>> B1_choices;
+    B1_choices.push_back(orbit_b);
+    B1_choices.push_back(orbit_Dinvs);
+    B1_choices.push_back(orbit_Dinvb);
+    B1_choices.push_back(orbit_Dinvf);
+    B1_choices.push_back(orbit_s);
+    B1_choices.push_back(P_1);
+
+    fileOutputAllFullRankMatrices(B1_choices, "B1_matrices.csv", true);
 }
 
 // try all possibilities of making 6x6 matrices using our set P
