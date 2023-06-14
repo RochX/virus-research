@@ -206,11 +206,21 @@ int main() {
 
     std::cout << "Loop ran for: " << (current_time - start_time) << " seconds" << std::endl;
 
-//    for (Matrix6f M : rank6matrices) {
-//        cout << M << endl << endl;
-//    }
-    cout << rank6matrices.size() << endl;
+    // output all rank 6 matrices to a csv file.
+    Eigen::IOFormat CommaSepVals(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "", "");
+    ofstream fout ("B0_matrices.csv");
+    if (fout.is_open()) {
+        cout << "Opened file, now outputting...\n";
+        fout << "11, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36, 41, 42, 43, 44, 45, 46, 51, 52, 53, 54, 55, 56, 61, 62, 63, 64, 65, 66" << endl;
+        for (const Matrix6f &M : rank6matrices) {
+            fout << M.format(CommaSepVals) << endl;
+        }
+        fout.close();
+        cout << "Done.\n";
+    }
 
+    // output total number of rank 6 matrices
+    cout << "Total number of rank 6 matrices in B_0 is:\t" << rank6matrices.size() << endl;
 
 
 
