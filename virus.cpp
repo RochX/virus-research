@@ -125,7 +125,9 @@ std::vector<Vector6f> generateOrbit(const Vector6f &v, std::vector<Matrix6f> &G)
     std::vector<Vector6f> orbit;
 
     for (const Matrix6f &g : G) {
-        orbit.emplace_back(g*v);
+        // ensure no duplicates in orbit
+        if (std::find(orbit.begin(), orbit.end(), g*v) == orbit.end())
+            orbit.emplace_back(g*v);
     }
 
     return orbit;
