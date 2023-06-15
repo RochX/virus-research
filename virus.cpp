@@ -170,24 +170,53 @@ void generateAllCentralizerCandidates(const string &B0_filename, const string &B
     getline(b0in, b0line);
     getline(b1in, b1line);
 
-    vector<Matrix6f> b0matrices;
-    readnextNMatrices(b0in, b0matrices, 2);
+    vector<Matrix6f> b1matrices;
+    Matrix6f b0matrix;
 
-    cout << "reading next 2 matrices\n";
-    for (const Matrix6f &m : b0matrices) {
-        cout << m << endl << endl;
+    int tempCount = 0;
+
+    int b0count = 0;
+    int b1count = 0;
+    int b0CAP = 10;
+    int b1CAP = 100000;
+    int N = 10000;
+    int ICO_centralizer_count = 0;
+
+    // read B0 matrices
+    while (readnextMatrix(b0in, b0matrix)) {
+
+        // reset stuff for B1
+        b1count = 0;
+        b1in.clear();
+        b1in.seekg(0);
+        // read csv header
+        getline(b1in, b1line);
+
+        // read B1 matrices
+        while(readnextNMatrices(b1in, b1matrices, N)) {
+            // check for ICO centralizer using B_1B_0^-1
+            for (const Matrix6f &b1 : b1matrices) {
+//                cout << b1*b0matrix.inverse() << endl << endl;
+                if (check_ICO_centralizer(b1*b0matrix.inverse())) {
+                    ICO_centralizer_count++;
+                }
+            }
+
+
+            // keep track of how many B1 matrices read
+            b1count += N;
+            if (b1count >= b1CAP)
+                break;
+        }
+
+        // keep track of how many B0 matrices read
+        b0count++;
+        cout << b0count << endl;
+        if (b0count >= b0CAP)
+            break;
     }
 
-    readnextNMatrices(b0in, b0matrices, 2);
-    cout << "reading next 2 matrices\n";
-    for (const Matrix6f &m : b0matrices) {
-        cout << m << endl << endl;
-    }
-
-    cout << "reading next matrix\n";
-    Matrix6f m;
-    readnextMatrix(b0in, m);
-    cout << m << endl << endl;
+    cout << "ICO centralizer count:\t" << ICO_centralizer_count << endl;
 }
 
 bool readnextMatrix(ifstream &fin, Matrix6f &m) {
