@@ -19,6 +19,11 @@ using namespace std;
 typedef Eigen::Vector<float, 6> Vector6f;
 typedef Eigen::Matrix<float, 6, 6> Matrix6f;
 
+void generateAllCentralizerCandidates(const string&, const string&, bool);
+bool readnextMatrix(ifstream&, Matrix6f&);
+bool readnextNMatrices(ifstream&, vector<Matrix6f>&, int);
+vector<Matrix6f> convertLinesToMatrices(const vector<string>&);
+bool readnextNLines(ifstream&, vector<string>&, int);
 void fileOutputAllFullRankMatrices(const std::vector<vector<Vector6f>>&, const string&, bool);
 void append_vector(std::vector<Vector6f>&, std::vector<Vector6f>&, bool = true);
 std::vector<Vector6f> generateOrbit(const Vector6f&, std::vector<Matrix6f>&);
@@ -149,6 +154,107 @@ int main() {
     B1_choices.push_back(P_1);
 
     fileOutputAllFullRankMatrices(B1_choices, "B1_matrices.csv", true);
+}
+
+// using two filenames, generate B_1B_0^-1 and check if it's in the centralizer
+void generateAllCentralizerCandidates(const string &B0_filename, const string &B1_filename, bool permuteB1) {
+    ifstream b0in (B0_filename);
+    ifstream b1in (B1_filename);
+
+    string b0line, b1line;
+    string cell;
+    stringstream lineStream;
+    vector<float> entries;
+
+    // read csv headers
+    getline(b0in, b0line);
+    getline(b1in, b1line);
+
+    vector<Matrix6f> b0matrices;
+    readnextNMatrices(b0in, b0matrices, 2);
+
+    cout << "reading next 2 matrices\n";
+    for (const Matrix6f &m : b0matrices) {
+        cout << m << endl << endl;
+    }
+
+    readnextNMatrices(b0in, b0matrices, 2);
+    cout << "reading next 2 matrices\n";
+    for (const Matrix6f &m : b0matrices) {
+        cout << m << endl << endl;
+    }
+
+    cout << "reading next matrix\n";
+    Matrix6f m;
+    readnextMatrix(b0in, m);
+    cout << m << endl << endl;
+}
+
+bool readnextMatrix(ifstream &fin, Matrix6f &m) {
+    vector<Matrix6f> matrices;
+    // try to read matrix
+    if (readnextNMatrices(fin, matrices, 1)) {
+        // succeeded, assign it
+        m = matrices.front();
+        return true;
+    }
+    // failed to read matrix
+    else {
+        return false;
+    }
+}
+
+bool readnextNMatrices(ifstream &fin, vector<Matrix6f> &matrices, int N) {
+    vector<string> lines;
+
+    readnextNLines(fin, lines, N);
+
+    matrices = convertLinesToMatrices(lines);
+
+    return !matrices.empty();
+}
+
+// takes a list of lines and converts them to a list of 6x6 matrices
+// precondition: each string in the vector lines is 36 comma delimited floats
+vector<Matrix6f> convertLinesToMatrices(const vector<string> &lines) {
+    vector<Matrix6f> matrices;
+    Matrix6f m;
+
+    stringstream ss;
+    string cell;
+    int pos;
+
+    for (const string &line : lines) {
+        ss.clear();
+        ss << line;
+
+        pos = 0;
+        while(getline(ss, cell, ',')) {
+            m(pos/6, pos%6) = stof(cell);
+            pos++;
+        }
+
+        matrices.push_back(m);
+    }
+
+    return matrices;
+}
+
+// reads the next N lines from the specified ifstream
+// the ifstream has less than N lines left, it will read the rest of them
+bool readnextNLines(ifstream &fin, vector<string> &lines, int N) {
+    string line;
+    int lines_read = 0;
+    while (getline(fin, line)) {
+        lines.push_back(line);
+
+        lines_read++;
+        if (lines_read >= N) {
+            break;
+        }
+    }
+
+    return lines_read > 0;
 }
 
 // try all possibilities of making 6x6 matrices using our set P
