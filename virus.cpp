@@ -217,6 +217,9 @@ void generateAllCentralizerCandidates(const string &B0_filename, const string &B
     }
 
     cout << "ICO centralizer count:\t" << ICO_centralizer_count << endl;
+
+    b0in.close();
+    b1in.close();
 }
 
 bool readnextMatrix(ifstream &fin, Matrix6f &m) {
