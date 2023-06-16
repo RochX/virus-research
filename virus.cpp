@@ -6,6 +6,7 @@
 #include <omp.h>
 
 #include "EigenTypes.hpp"
+#include "IcosahedralGroup.hpp"
 #include "Matrix6fFileReader.hpp"
 
 #ifndef EIGEN_DONT_PARALLELIZE
@@ -19,66 +20,9 @@ using namespace EigenType;
 void generateAllCentralizerCandidates(const std::string&, const std::string&, bool);
 void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>>&, const std::string&, bool);
 void append_vector(std::vector<Vector6f>&, std::vector<Vector6f>&, bool = true);
-std::vector<Vector6f> generateOrbit(const Vector6f&, std::vector<Matrix6f>&);
-Matrix6f ICO_centralizer(float, float);
-bool check_ICO_centralizer(Matrix6f);
 
 int main() {
-    // initialize the generator matrices of the group ICO
-    Matrix6f A, B, ID;
-    ID = Matrix6f::Identity();
-
-    // A has order 2
-    A << -1, 0, 0, 0, 0, 0,
-        0, -1, 0, 0, 0, 0,
-        0, 0, 0, 0, 1, 0,
-        0, 0, 0, 0, 0, 1,
-        0, 0, 1, 0, 0, 0,
-        0, 0, 0, 1, 0, 0;
-
-    // B has order 3
-    B << 0, -1, 0, 0, 0, 0,
-        0, 0, -1, 0, 0, 0,
-        1, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 1,
-        0, 0, 0, 1, 0, 0,
-        0, 0, 0, 0, 1, 0;
-
-    // note that this "vector" is a C++ dynamic list, *not* the Eigen library vector.
-    std::vector<Matrix6f> ICO;
-    Matrix6f curr;
-    ICO.push_back(ID);
-    int element_id;
-    // generate ICO with a brute force approach as we know it has 60 elements.
-    for (int i = 0; i < 10000; ++i) {
-        element_id = i;
-        curr = ID;
-
-        // generate ICO by using binary representation, with 0 corresponding to A and 1 corresponding to B.
-        // exs: 10 = BA
-        //      100 = BA^2
-        //      1011 = BAB^2
-        // note that while we do not get elements like 011 = AB^2 explicitly, we know that B has order 3, and so we do get the element 111011 = B^3AB^2 = AB^2
-        // so this process will generate all elements of ICO.
-        do {
-            if (element_id % 2 == 0) {
-                curr *= A;
-            }
-            else {
-                curr *= B;
-            }
-            element_id /= 2;
-        } while (element_id > 0);
-
-        // check if ICO already has the current element, if not add it.
-        if (std::find(ICO.begin(), ICO.end(), curr) == ICO.end())
-            ICO.push_back(curr);
-
-        // if ICO has 60 (unique) elements we're done
-        if (ICO.size() == 60) {
-            break;
-        }
-    }
+    IcosahedralGroup IcosahedralGroup;
 
     Matrix6f D;
     D << 1,1,-1,-1,1,1,
@@ -101,10 +45,10 @@ int main() {
     f *= 0.5;
 
     std::vector<Vector6f> orbit_s, orbit_b, orbit_Dinvs, orbit_Dinvb, orbit_Dinvf, P_0, P_1;
-    orbit_s = generateOrbit(s, ICO);
-    orbit_b = generateOrbit(b, ICO);
-    orbit_Dinvb = generateOrbit(D.inverse()*b, ICO);
-    orbit_Dinvf = generateOrbit(D.inverse()*f, ICO);
+    orbit_s = IcosahedralGroup.getOrbitOfVector(s);
+    orbit_b = IcosahedralGroup.getOrbitOfVector(b);
+    orbit_Dinvb = IcosahedralGroup.getOrbitOfVector(D.inverse()*b);
+    orbit_Dinvf = IcosahedralGroup.getOrbitOfVector(D.inverse()*f);
 
     // create P_0 by appending all the orbits together
     append_vector(P_0, orbit_s);
@@ -125,11 +69,11 @@ int main() {
     fileOutputAllFullRankMatrices(B0_choices, "B0_matrices.csv", true);
 
     // process of picking linearly independent matrices from P_1
-    orbit_s = generateOrbit(s, ICO);
-    orbit_b = generateOrbit(b, ICO);
-    orbit_Dinvs = generateOrbit(D.inverse()*s, ICO);
-    orbit_Dinvb = generateOrbit(D.inverse()*b, ICO);
-    orbit_Dinvf = generateOrbit(D.inverse()*f, ICO);
+    orbit_s = IcosahedralGroup.getOrbitOfVector(s);
+    orbit_b = IcosahedralGroup.getOrbitOfVector(b);
+    orbit_Dinvs = IcosahedralGroup.getOrbitOfVector(D.inverse()*s);
+    orbit_Dinvb = IcosahedralGroup.getOrbitOfVector(D.inverse()*b);
+    orbit_Dinvf = IcosahedralGroup.getOrbitOfVector(D.inverse()*f);
 
     append_vector(P_1, orbit_b);
     append_vector(P_1, orbit_Dinvs);
@@ -147,6 +91,8 @@ int main() {
     B1_choices.push_back(P_1);
 
     fileOutputAllFullRankMatrices(B1_choices, "B1_matrices.csv", true);
+
+    generateAllCentralizerCandidates("B0_matrices.csv", "B1_matrices.csv", true);
 }
 
 // using two filenames, generate B_1B_0^-1 and check if it's in the centralizer
@@ -190,7 +136,7 @@ void generateAllCentralizerCandidates(const std::string &B0_filename, const std:
             // check for ICO centralizer using B_1B_0^-1
             for (const Matrix6f &b1 : b1matrices) {
 //                std::cout << b1*b0matrix.inverse() << std::endl << std::endl;
-                if (check_ICO_centralizer(b1*b0matrix.inverse())) {
+                if (IcosahedralGroup::checkIfInCentralizer(b1*b0matrix.inverse())) {
                     ICO_centralizer_count++;
                 }
             }
@@ -317,32 +263,4 @@ void append_vector(std::vector<Vector6f>& v1, std::vector<Vector6f>& v2, bool re
             v1.push_back(v);
         }
     }
-}
-
-// function to generate orbit of a vector under a given group.
-std::vector<Vector6f> generateOrbit(const Vector6f &v, std::vector<Matrix6f> &G) {
-    std::vector<Vector6f> orbit;
-
-    for (const Matrix6f &g : G) {
-        // ensure no duplicates in orbit
-        if (std::find(orbit.begin(), orbit.end(), g*v) == orbit.end())
-            orbit.emplace_back(g*v);
-    }
-
-    return orbit;
-}
-
-Matrix6f ICO_centralizer(float z, float x) {
-    Matrix6f c;
-    c << z,x,-x,-x,x,x,
-        x,z,x,-x,-x,x,
-        -x,x,z,x,-x,x,
-        -x,-x,x,z,x,x,
-        x,-x,-x,x,z,x,
-        x,x,x,x,x,z;
-    return c;
-}
-
-bool check_ICO_centralizer(Matrix6f m) {
-    return m == ICO_centralizer(m(0,0), m(0,1));
 }
