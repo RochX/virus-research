@@ -14,11 +14,10 @@
 
 #define NUM_THREADS 16
 
-using namespace std;
 using namespace EigenType;
 
-void generateAllCentralizerCandidates(const string&, const string&, bool);
-void fileOutputAllFullRankMatrices(const std::vector<vector<Vector6f>>&, const string&, bool);
+void generateAllCentralizerCandidates(const std::string&, const std::string&, bool);
+void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>>&, const std::string&, bool);
 void append_vector(std::vector<Vector6f>&, std::vector<Vector6f>&, bool = true);
 std::vector<Vector6f> generateOrbit(const Vector6f&, std::vector<Matrix6f>&);
 Matrix6f ICO_centralizer(float, float);
@@ -139,7 +138,7 @@ int main() {
     append_vector(P_1, orbit_s);
 
     // append choices for B1
-    std::vector<vector<Vector6f>> B1_choices;
+    std::vector<std::vector<Vector6f>> B1_choices;
     B1_choices.push_back(orbit_b);
     B1_choices.push_back(orbit_Dinvs);
     B1_choices.push_back(orbit_Dinvb);
@@ -151,20 +150,20 @@ int main() {
 }
 
 // using two filenames, generate B_1B_0^-1 and check if it's in the centralizer
-void generateAllCentralizerCandidates(const string &B0_filename, const string &B1_filename, bool permuteB1) {
-    ifstream b0in (B0_filename);
-    ifstream b1in (B1_filename);
+void generateAllCentralizerCandidates(const std::string &B0_filename, const std::string &B1_filename, bool permuteB1) {
+    std::ifstream b0in (B0_filename);
+    std::ifstream b1in (B1_filename);
 
-    string b0line, b1line;
-    string cell;
-    stringstream lineStream;
-    vector<float> entries;
+    std::string b0line, b1line;
+    std::string cell;
+    std::stringstream lineStream;
+    std::vector<float> entries;
 
     // read csv headers
     getline(b0in, b0line);
     getline(b1in, b1line);
 
-    vector<Matrix6f> b1matrices;
+    std::vector<Matrix6f> b1matrices;
     Matrix6f b0matrix;
 
     int tempCount = 0;
@@ -190,7 +189,7 @@ void generateAllCentralizerCandidates(const string &B0_filename, const string &B
         while(Matrix6fFileReader::readNextNMatrices(b1in, b1matrices, N)) {
             // check for ICO centralizer using B_1B_0^-1
             for (const Matrix6f &b1 : b1matrices) {
-//                cout << b1*b0matrix.inverse() << endl << endl;
+//                std::cout << b1*b0matrix.inverse() << std::endl << std::endl;
                 if (check_ICO_centralizer(b1*b0matrix.inverse())) {
                     ICO_centralizer_count++;
                 }
@@ -205,12 +204,12 @@ void generateAllCentralizerCandidates(const string &B0_filename, const string &B
 
         // keep track of how many B0 matrices read
         b0count++;
-        cout << b0count << endl;
+        std::cout << b0count << std::endl;
         if (b0count >= b0CAP)
             break;
     }
 
-    cout << "ICO centralizer count:\t" << ICO_centralizer_count << endl;
+    std::cout << "ICO centralizer count:\t" << ICO_centralizer_count << std::endl;
 
     b0in.close();
     b1in.close();
@@ -220,8 +219,8 @@ void generateAllCentralizerCandidates(const string &B0_filename, const string &B
 // try all possibilities of making 6x6 matrices using our set P
 // precondition: P has precisely 6 lists of 6 element column vectors
 // precondition: filename is a csv file
-void fileOutputAllFullRankMatrices(const std::vector<vector<Vector6f>> &P, const string &filename, bool parallelize) {
-    string CSV_HEADER = "11, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36, 41, 42, 43, 44, 45, 46, 51, 52, 53, 54, 55, 56, 61, 62, 63, 64, 65, 66";
+void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>> &P, const std::string &filename, bool parallelize) {
+    std::string CSV_HEADER = "11, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36, 41, 42, 43, 44, 45, 46, 51, 52, 53, 54, 55, 56, 61, 62, 63, 64, 65, 66";
     Eigen::IOFormat CommaSepVals(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "", "");
 
     Matrix6f m;
@@ -230,24 +229,24 @@ void fileOutputAllFullRankMatrices(const std::vector<vector<Vector6f>> &P, const
     long long totalPmatrices = 1;
     long long totalrank6Pmatrices = 0;
 
-    for (const vector<Vector6f> &v : P) {
+    for (const std::vector<Vector6f> &v : P) {
         totalPmatrices *= v.size();
     }
 
     // check we actually have a nonzero number of matrices to check
     if (totalPmatrices < 1) {
-        cerr << "0 P matrices! One of the lists within P has length zero!" << endl;
+        std::cerr << "0 P matrices! One of the lists within P has length zero!" << std::endl;
         return;
     }
 
     // check if we opened file properly, if so output csv header
-    ofstream fout (filename);
+    std::ofstream fout (filename);
     if (!fout.is_open()) {
-        cerr << "Failed to open file " << filename << " within function fileOutputAllFullRankMatrices." << endl;
+        std::cerr << "Failed to open file " << filename << " within function fileOutputAllFullRankMatrices." << std::endl;
         return;
     }
     else {
-        fout << CSV_HEADER << endl;
+        fout << CSV_HEADER << std::endl;
     }
 
     // start tracking time
@@ -271,7 +270,7 @@ void fileOutputAllFullRankMatrices(const std::vector<vector<Vector6f>> &P, const
                                 // check our matrix is of rank 6
                                 if (m.colPivHouseholderQr().rank() == 6) {
                                     #pragma omp critical
-                                    fout << m.format(CommaSepVals) << endl;
+                                    fout << m.format(CommaSepVals) << std::endl;
 
                                     // count how many matrices we output
                                     totalrank6Pmatrices++;
@@ -281,10 +280,10 @@ void fileOutputAllFullRankMatrices(const std::vector<vector<Vector6f>> &P, const
                                 if (omp_get_thread_num() == 0) {
                                     currChecked++;
                                     if (currChecked % 1000 == 0) {
-                                        cout << "Thread 0 has checked:\t" << currChecked << " out of " << totalPmatrices/omp_get_num_threads() << endl;
+                                        std::cout << "Thread 0 has checked:\t" << currChecked << " out of " << totalPmatrices/omp_get_num_threads() << std::endl;
                                     }
                                     else if (currChecked == totalPmatrices/omp_get_num_threads()) {
-                                        cout << "Thread 0 has checked:\t" << currChecked << " out of " << totalPmatrices/omp_get_num_threads() << endl;
+                                        std::cout << "Thread 0 has checked:\t" << currChecked << " out of " << totalPmatrices/omp_get_num_threads() << std::endl;
                                     }
                                 }
                             }
@@ -299,9 +298,9 @@ void fileOutputAllFullRankMatrices(const std::vector<vector<Vector6f>> &P, const
 
     // finish tracking time, output some results
     auto current_time = omp_get_wtime();
-    cout << "\nFinished outputting to " << filename << "." << endl;
-    cout << "Outputted " << totalrank6Pmatrices << " matrices of rank 6." << endl;
-    cout << "Total time taken:\t" << (current_time - start_time) << " seconds" << endl;
+    std::cout << "\nFinished outputting to " << filename << "." << std::endl;
+    std::cout << "Outputted " << totalrank6Pmatrices << " matrices of rank 6." << std::endl;
+    std::cout << "Total time taken:\t" << (current_time - start_time) << " seconds" << std::endl;
 }
 
 // append the contents of v2 to v1, possibly checking for duplicates
