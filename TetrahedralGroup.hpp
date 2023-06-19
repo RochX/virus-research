@@ -5,11 +5,12 @@
 
 class TetrahedralGroup: public Matrix6fGroup {
 private:
-    static EigenType::Matrix6f matrixFormOfCentralizer(float, float, float, float);
+    EigenType::Matrix6f matrixFormOfCentralizer(float, float, float, float);
 
 public:
     TetrahedralGroup();
-    static bool checkIfInCentralizer(EigenType::Matrix6f);
+    bool checkIfInCentralizer(EigenType::Matrix6f) override;
+    std::string groupName() override;
 };
 
 

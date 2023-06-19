@@ -42,4 +42,6 @@ bool TetrahedralGroup::checkIfInCentralizer(EigenType::Matrix6f m) {
     return m.isApprox(matrixFormOfCentralizer(m(4, 2), m(4, 3), m(4, 4), m(4, 5)));
 }
 
-
+std::string TetrahedralGroup::groupName() {
+    return "TetrahedralGroup";
+}

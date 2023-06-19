@@ -7,11 +7,12 @@
 
 class IcosahedralGroup : public Matrix6fGroup {
 private:
-    static EigenType::Matrix6f matrixFormOfCentralizer(float, float);
+    EigenType::Matrix6f matrixFormOfCentralizer(float, float);
 
 public:
     IcosahedralGroup();
-    static bool checkIfInCentralizer(EigenType::Matrix6f);
+    bool checkIfInCentralizer(EigenType::Matrix6f) override;
+    std::string groupName() override;
 };
 
 

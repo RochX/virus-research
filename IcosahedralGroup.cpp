@@ -35,3 +35,7 @@ EigenType::Matrix6f IcosahedralGroup::matrixFormOfCentralizer(float z, float x) 
 bool IcosahedralGroup::checkIfInCentralizer(EigenType::Matrix6f m) {
     return m.isApprox(matrixFormOfCentralizer(m(0,0), m(0,1)));
 }
+
+std::string IcosahedralGroup::groupName() {
+    return "IcosahedralGroup";
+}
