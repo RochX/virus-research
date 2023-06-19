@@ -57,7 +57,6 @@ void generateAllCentralizerCandidates(Matrix6fGroup &matrixGroup, const std::str
     std::string b0line, b1line;
     std::string cell;
     std::stringstream lineStream;
-    std::vector<float> entries;
 
     // read csv headers
     getline(b0in, b0line);
@@ -66,50 +65,68 @@ void generateAllCentralizerCandidates(Matrix6fGroup &matrixGroup, const std::str
     std::vector<Matrix6f> b1matrices;
     Matrix6f b0matrix;
 
-    int tempCount = 0;
-
-    int b0count = 0;
-    int b1count = 0;
-    int b0CAP = 10;
-    int b1CAP = 100000;
+    int b0count, b1count;
+    int b0CAP = INT32_MAX;
+    int b1CAP = INT32_MAX;
     int N = 10000;
     int group_centralizer_count = 0;
 
-    // read B0 matrices
-    while (Matrix6fFileReader::readNextMatrix(b0in, b0matrix)) {
+    std::cout << "Start checking all pairs of B0 and B1..." << std::endl;
+    auto start_time = omp_get_wtime();
 
-        // reset stuff for B1
-        b1count = 0;
-        b1in.clear();
-        b1in.seekg(0);
-        // read csv header
-        getline(b1in, b1line);
+    #pragma omp parallel num_threads(NUM_THREADS) private(b0count, b1count, b0matrix, b1matrices, b1line) shared(matrixGroup, start_time, std::cout, N, b0CAP, b1CAP, b0in, b1in, group_centralizer_count) default(none)
+    {
+        #pragma omp single nowait
+        {
+            b0count = 0;
+            // read B0 matrices
+            while (Matrix6fFileReader::readNextMatrix(b0in, b0matrix)) {
 
-        // read B1 matrices
-        while(Matrix6fFileReader::readNextNMatrices(b1in, b1matrices, N)) {
-            // check for ICO centralizer using B_1B_0^-1
-            for (const Matrix6f &b1 : b1matrices) {
-//                std::cout << b1*b0matrix.inverse() << std::endl << std::endl;
-                if (matrixGroup.checkIfInCentralizer(b1*b0matrix.inverse())) {
-                    group_centralizer_count++;
+                // reset B1 file reader to top of file
+                b1count = 0;
+                b1in.clear();
+                b1in.seekg(0);
+                // read csv header
+                getline(b1in, b1line);
+
+                // read B1 matrices
+                while (Matrix6fFileReader::readNextNMatrices(b1in, b1matrices, N)) {
+                    // check for ICO centralizer using B_1B_0^-1
+                    for (const Matrix6f &b1: b1matrices) {
+                        // assign task to check this pair of matrices
+                        #pragma omp task shared(matrixGroup, group_centralizer_count) firstprivate(b0matrix, b1) default(none)
+                        {
+                            if (matrixGroup.checkIfInCentralizer(b1 * b0matrix.inverse())) {
+                                #pragma omp atomic
+                                group_centralizer_count++;
+                            }
+                        }
+                    }
+
+
+                    // keep track of how many B1 matrices read
+                    b1count += N;
+                    if (b1count >= b1CAP)
+                        break;
                 }
+
+                // keep track of how many B0 matrices read
+                b0count++;
+                auto current_time = omp_get_wtime();
+                if (b0count % (b0CAP/100) == 0) {
+                    std::cout << "Number of B0 processed: " << b0count << " in " << (current_time-start_time) << " seconds." << std::endl;
+                }
+                if (b0count >= b0CAP)
+                    break;
             }
-
-
-            // keep track of how many B1 matrices read
-            b1count += N;
-            if (b1count >= b1CAP)
-                break;
         }
 
-        // keep track of how many B0 matrices read
-        b0count++;
-        std::cout << b0count << std::endl;
-        if (b0count >= b0CAP)
-            break;
+        #pragma omp taskwait
     }
 
+    auto current_time = omp_get_wtime();
     std::cout << matrixGroup.groupName() << " centralizer count:\t" << group_centralizer_count << std::endl;
+    std::cout << "Done in " << (current_time-start_time) << " seconds." << std::endl;
 
     b0in.close();
     b1in.close();
