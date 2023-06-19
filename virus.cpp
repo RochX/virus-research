@@ -21,7 +21,18 @@ void generateAllCentralizerCandidates(const std::string&, const std::string&, bo
 void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>>&, const std::string&, bool);
 void append_vector(std::vector<Vector6f>&, std::vector<Vector6f>&, bool = true);
 
-int main() {
+int main(int argc, char *argv[]) {
+    std::string currDirectory;
+    // if second argument given, assume all files are in directory specified by the second argument
+    if (argc > 1) {
+        currDirectory = argv[1];
+        if (currDirectory.back() != '/') {
+            currDirectory = currDirectory + "/";
+        }
+    }
+    std::string B0MatricesFileName = currDirectory + "B0_matrices.csv";
+    std::string B1MatricesFileName = currDirectory + "B1_matrices.csv";
+
     IcosahedralGroup IcosahedralGroup;
 
     Matrix6f D;
@@ -65,8 +76,7 @@ int main() {
     B0_choices.push_back(P_0);
     B0_choices.push_back(P_0);
 
-
-    fileOutputAllFullRankMatrices(B0_choices, "B0_matrices.csv", true);
+    fileOutputAllFullRankMatrices(B0_choices, B0MatricesFileName, true);
 
     // process of picking linearly independent matrices from P_1
     orbit_s = IcosahedralGroup.getOrbitOfVector(s);
@@ -90,9 +100,9 @@ int main() {
     B1_choices.push_back(orbit_s);
     B1_choices.push_back(P_1);
 
-    fileOutputAllFullRankMatrices(B1_choices, "B1_matrices.csv", true);
+    fileOutputAllFullRankMatrices(B1_choices, B1MatricesFileName, true);
 
-    generateAllCentralizerCandidates("B0_matrices.csv", "B1_matrices.csv", true);
+    generateAllCentralizerCandidates(B0MatricesFileName, B1MatricesFileName, true);
 }
 
 // using two filenames, generate B_1B_0^-1 and check if it's in the centralizer
