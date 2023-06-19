@@ -18,8 +18,12 @@
 using namespace EigenType;
 
 void generateAllCentralizerCandidates(const std::string&, const std::string&, bool);
+void generateAllB0andB1Matrices(Matrix6fGroup&, bool, bool, bool = false);
 void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>>&, const std::string&, bool);
 void append_vector(std::vector<Vector6f>&, std::vector<Vector6f>&, bool = true);
+
+std::string B0MatricesFileName;
+std::string B1MatricesFileName;
 
 int main(int argc, char *argv[]) {
     std::string currDirectory;
@@ -30,77 +34,12 @@ int main(int argc, char *argv[]) {
             currDirectory = currDirectory + "/";
         }
     }
-    std::string B0MatricesFileName = currDirectory + "B0_matrices.csv";
-    std::string B1MatricesFileName = currDirectory + "B1_matrices.csv";
+    B0MatricesFileName = currDirectory + "B0_matrices.csv";
+    B1MatricesFileName = currDirectory + "B1_matrices.csv";
 
     IcosahedralGroup IcosahedralGroup;
 
-    Matrix6f D;
-    D << 1,1,-1,-1,1,1,
-        1,1,1,-1,-1,1,
-        -1,1,1,1,-1,1,
-        -1,-1,1,1,1,1,
-        1,-1,-1,1,1,1,
-        1,1,1,1,1,1;
-    D *= 0.5;
-
-    // declare and initialize vectors which we will make orbits of
-    // s: the ICO orbit of s is the icosahedron (the particular 6D embedding we are working with)
-    // b: the ICO orbit of b is the dodecahedron (which is dual to the icosahedron which is why this vector by itself produces an SC lattice -- in fact, the specific SC lattice is D*sc where sc denotes our standard(fixed) simple cubic)
-    // f: the ICO orbit of f is the icosidodecahedron
-    Vector6f s, b, f;
-    s << 1, 0, 0, 0, 0, 0;
-    b << 1,-1,1,1,-1,1;
-    b *= 0.5;
-    f << 1,0,0,-1,0,0;
-    f *= 0.5;
-
-    std::vector<Vector6f> orbit_s, orbit_b, orbit_Dinvs, orbit_Dinvb, orbit_Dinvf, P_0, P_1;
-    orbit_s = IcosahedralGroup.getOrbitOfVector(s);
-    orbit_b = IcosahedralGroup.getOrbitOfVector(b);
-    orbit_Dinvb = IcosahedralGroup.getOrbitOfVector(D.inverse()*b);
-    orbit_Dinvf = IcosahedralGroup.getOrbitOfVector(D.inverse()*f);
-
-    // create P_0 by appending all the orbits together
-    append_vector(P_0, orbit_s);
-    append_vector(P_0, orbit_b);
-    append_vector(P_0, orbit_Dinvb);
-    append_vector(P_0, orbit_Dinvf);
-
-    // create the list that holds all the possibilities for each column vector
-    std::vector<std::vector<Vector6f>> B0_choices;
-    B0_choices.push_back(orbit_s);
-    B0_choices.push_back(orbit_Dinvb);
-    B0_choices.push_back(orbit_Dinvf);
-    B0_choices.push_back(orbit_b);
-    B0_choices.push_back(P_0);
-    B0_choices.push_back(P_0);
-
-    fileOutputAllFullRankMatrices(B0_choices, B0MatricesFileName, true);
-
-    // process of picking linearly independent matrices from P_1
-    orbit_s = IcosahedralGroup.getOrbitOfVector(s);
-    orbit_b = IcosahedralGroup.getOrbitOfVector(b);
-    orbit_Dinvs = IcosahedralGroup.getOrbitOfVector(D.inverse()*s);
-    orbit_Dinvb = IcosahedralGroup.getOrbitOfVector(D.inverse()*b);
-    orbit_Dinvf = IcosahedralGroup.getOrbitOfVector(D.inverse()*f);
-
-    append_vector(P_1, orbit_b);
-    append_vector(P_1, orbit_Dinvs);
-    append_vector(P_1, orbit_Dinvb);
-    append_vector(P_1, orbit_Dinvf);
-    append_vector(P_1, orbit_s);
-
-    // append choices for B1
-    std::vector<std::vector<Vector6f>> B1_choices;
-    B1_choices.push_back(orbit_b);
-    B1_choices.push_back(orbit_Dinvs);
-    B1_choices.push_back(orbit_Dinvb);
-    B1_choices.push_back(orbit_Dinvf);
-    B1_choices.push_back(orbit_s);
-    B1_choices.push_back(P_1);
-
-    fileOutputAllFullRankMatrices(B1_choices, B1MatricesFileName, true);
+    generateAllB0andB1Matrices(IcosahedralGroup, true, true, true);
 
     generateAllCentralizerCandidates(B0MatricesFileName, B1MatricesFileName, true);
 }
@@ -171,6 +110,91 @@ void generateAllCentralizerCandidates(const std::string &B0_filename, const std:
     b1in.close();
 }
 
+void generateAllB0andB1Matrices(Matrix6fGroup &matrixGroup, bool generateB0, bool generateB1, bool generatePartial) {
+    Matrix6f D;
+    D << 1,1,-1,-1,1,1,
+            1,1,1,-1,-1,1,
+            -1,1,1,1,-1,1,
+            -1,-1,1,1,1,1,
+            1,-1,-1,1,1,1,
+            1,1,1,1,1,1;
+    D *= 0.5;
+
+    // declare and initialize vectors which we will make orbits of
+    // s: the ICO orbit of s is the icosahedron (the particular 6D embedding we are working with)
+    // b: the ICO orbit of b is the dodecahedron (which is dual to the icosahedron which is why this vector by itself produces an SC lattice -- in fact, the specific SC lattice is D*sc where sc denotes our standard(fixed) simple cubic)
+    // f: the ICO orbit of f is the icosidodecahedron
+    Vector6f s, b, f;
+    s << 1, 0, 0, 0, 0, 0;
+    b << 1,-1,1,1,-1,1;
+    b *= 0.5;
+    f << 1,0,0,-1,0,0;
+    f *= 0.5;
+
+    std::vector<Vector6f> orbit_s, orbit_b, orbit_Dinvs, orbit_Dinvb, orbit_Dinvf, P_0, P_1;
+    orbit_s = matrixGroup.getOrbitOfVector(s);
+    orbit_b = matrixGroup.getOrbitOfVector(b);
+    orbit_Dinvb = matrixGroup.getOrbitOfVector(D.inverse() * b);
+    orbit_Dinvf = matrixGroup.getOrbitOfVector(D.inverse() * f);
+
+    // create P_0 by appending all the orbits together
+    append_vector(P_0, orbit_s);
+    append_vector(P_0, orbit_b);
+    append_vector(P_0, orbit_Dinvb);
+    append_vector(P_0, orbit_Dinvf);
+
+    if (generatePartial) {
+        P_0.clear();
+        P_0.push_back(s);
+        P_0.push_back(b);
+    }
+
+    // create the list that holds all the possibilities for each column vector
+    std::vector<std::vector<Vector6f>> B0_choices;
+    B0_choices.push_back(orbit_s);
+    B0_choices.push_back(orbit_Dinvb);
+    B0_choices.push_back(orbit_Dinvf);
+    B0_choices.push_back(orbit_b);
+    B0_choices.push_back(P_0);
+    B0_choices.push_back(P_0);
+
+
+
+    // process of picking linearly independent matrices from P_1
+    orbit_s = matrixGroup.getOrbitOfVector(s);
+    orbit_b = matrixGroup.getOrbitOfVector(b);
+    orbit_Dinvs = matrixGroup.getOrbitOfVector(D.inverse()*s);
+    orbit_Dinvb = matrixGroup.getOrbitOfVector(D.inverse()*b);
+    orbit_Dinvf = matrixGroup.getOrbitOfVector(D.inverse()*f);
+
+    append_vector(P_1, orbit_b);
+    append_vector(P_1, orbit_Dinvs);
+    append_vector(P_1, orbit_Dinvb);
+    append_vector(P_1, orbit_Dinvf);
+    append_vector(P_1, orbit_s);
+
+    if (generatePartial) {
+        P_1.clear();
+        P_1.push_back(s);
+        P_1.push_back(b);
+    }
+
+    // append choices for B1
+    std::vector<std::vector<Vector6f>> B1_choices;
+    B1_choices.push_back(orbit_b);
+    B1_choices.push_back(orbit_Dinvs);
+    B1_choices.push_back(orbit_Dinvb);
+    B1_choices.push_back(orbit_Dinvf);
+    B1_choices.push_back(orbit_s);
+    B1_choices.push_back(P_1);
+
+    if (generateB0)
+        fileOutputAllFullRankMatrices(B0_choices, B0MatricesFileName, true);
+
+    if (generateB1)
+        fileOutputAllFullRankMatrices(B1_choices, B1MatricesFileName, true);
+}
+
 
 // try all possibilities of making 6x6 matrices using our set P
 // precondition: P has precisely 6 lists of 6 element column vectors
@@ -204,6 +228,8 @@ void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>> &P, 
     else {
         fout << CSV_HEADER << std::endl;
     }
+
+    std::cout << "Starting full rank matrix output to file:\t" + filename << "..." << std::endl;
 
     // start tracking time
     auto start_time = omp_get_wtime();
@@ -256,7 +282,7 @@ void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>> &P, 
     auto current_time = omp_get_wtime();
     std::cout << "\nFinished outputting to " << filename << "." << std::endl;
     std::cout << "Outputted " << totalrank6Pmatrices << " matrices of rank 6." << std::endl;
-    std::cout << "Total time taken:\t" << (current_time - start_time) << " seconds" << std::endl;
+    std::cout << "Total time taken:\t" << (current_time - start_time) << " seconds" << std::endl << std::endl;
 }
 
 // append the contents of v2 to v1, possibly checking for duplicates
