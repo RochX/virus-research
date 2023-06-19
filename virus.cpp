@@ -35,15 +35,18 @@ int main(int argc, char *argv[]) {
             currDirectory = currDirectory + "/";
         }
     }
-    B0MatricesFileName = currDirectory + "B0_matrices.csv";
-    B1MatricesFileName = currDirectory + "B1_matrices.csv";
 
     TetrahedralGroup TetrahedralGroup;
     IcosahedralGroup IcosahedralGroup;
 
-    generateAllB0andB1Matrices(TetrahedralGroup, true, true, true);
+    Matrix6fGroup* currentGroup = &TetrahedralGroup;
 
-    generateAllCentralizerCandidates(TetrahedralGroup, B0MatricesFileName, B1MatricesFileName, true);
+    B0MatricesFileName = currDirectory + currentGroup->groupName() + "_B0_matrices.csv";
+    B1MatricesFileName = currDirectory + currentGroup->groupName() + "_B1_matrices.csv";
+
+    generateAllB0andB1Matrices(*currentGroup, true, true, true);
+
+    generateAllCentralizerCandidates(*currentGroup, B0MatricesFileName, B1MatricesFileName, true);
 }
 
 // using two filenames, generate B_1B_0^-1 and check if it's in the centralizer
@@ -231,7 +234,7 @@ void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>> &P, 
         fout << CSV_HEADER << std::endl;
     }
 
-    std::cout << "Starting full rank matrix output to file:\t" + filename << "..." << std::endl;
+    std::cout << "Starting full rank matrix output to file:\t" + filename << std::endl;
 
     // start tracking time
     auto start_time = omp_get_wtime();
