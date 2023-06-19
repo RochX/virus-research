@@ -8,6 +8,7 @@
 #include "EigenTypes.hpp"
 #include "IcosahedralGroup.hpp"
 #include "Matrix6fFileReader.hpp"
+#include "TetrahedralGroup.hpp"
 
 #ifndef EIGEN_DONT_PARALLELIZE
 #define EIGEN_DONT_PARALLELIZE
@@ -17,7 +18,7 @@
 
 using namespace EigenType;
 
-void generateAllCentralizerCandidates(const std::string&, const std::string&, bool);
+void generateAllCentralizerCandidates(Matrix6fGroup&, const std::string&, const std::string&, bool);
 void generateAllB0andB1Matrices(Matrix6fGroup&, bool, bool, bool = false);
 void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>>&, const std::string&, bool);
 void append_vector(std::vector<Vector6f>&, std::vector<Vector6f>&, bool = true);
@@ -37,15 +38,16 @@ int main(int argc, char *argv[]) {
     B0MatricesFileName = currDirectory + "B0_matrices.csv";
     B1MatricesFileName = currDirectory + "B1_matrices.csv";
 
+    TetrahedralGroup TetrahedralGroup;
     IcosahedralGroup IcosahedralGroup;
 
-    generateAllB0andB1Matrices(IcosahedralGroup, true, true, true);
+    generateAllB0andB1Matrices(TetrahedralGroup, true, true, true);
 
-    generateAllCentralizerCandidates(B0MatricesFileName, B1MatricesFileName, true);
+    generateAllCentralizerCandidates(TetrahedralGroup, B0MatricesFileName, B1MatricesFileName, true);
 }
 
 // using two filenames, generate B_1B_0^-1 and check if it's in the centralizer
-void generateAllCentralizerCandidates(const std::string &B0_filename, const std::string &B1_filename, bool permuteB1) {
+void generateAllCentralizerCandidates(Matrix6fGroup &matrixGroup, const std::string &B0_filename, const std::string &B1_filename, bool permuteB1) {
     std::ifstream b0in (B0_filename);
     std::ifstream b1in (B1_filename);
 
@@ -68,7 +70,7 @@ void generateAllCentralizerCandidates(const std::string &B0_filename, const std:
     int b0CAP = 10;
     int b1CAP = 100000;
     int N = 10000;
-    int ICO_centralizer_count = 0;
+    int group_centralizer_count = 0;
 
     // read B0 matrices
     while (Matrix6fFileReader::readNextMatrix(b0in, b0matrix)) {
@@ -85,8 +87,8 @@ void generateAllCentralizerCandidates(const std::string &B0_filename, const std:
             // check for ICO centralizer using B_1B_0^-1
             for (const Matrix6f &b1 : b1matrices) {
 //                std::cout << b1*b0matrix.inverse() << std::endl << std::endl;
-                if (IcosahedralGroup::checkIfInCentralizer(b1*b0matrix.inverse())) {
-                    ICO_centralizer_count++;
+                if (matrixGroup.checkIfInCentralizer(b1*b0matrix.inverse())) {
+                    group_centralizer_count++;
                 }
             }
 
@@ -104,7 +106,7 @@ void generateAllCentralizerCandidates(const std::string &B0_filename, const std:
             break;
     }
 
-    std::cout << "ICO centralizer count:\t" << ICO_centralizer_count << std::endl;
+    std::cout << matrixGroup.groupName() << " centralizer count:\t" << group_centralizer_count << std::endl;
 
     b0in.close();
     b1in.close();
