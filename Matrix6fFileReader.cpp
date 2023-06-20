@@ -18,19 +18,23 @@ namespace {
         stringstream ss;
         string cell;
         int pos;
-
         for (const string &line: lines) {
             ss.clear();
             ss << line;
 
             pos = 0;
             while (getline(ss, cell, ',')) {
-                m(pos / 6, pos % 6) = stof(cell);
+                m((pos / 6) % 6, pos % 6) = stof(cell);
                 pos++;
             }
 
-            matrices.push_back(m);
-        }
+            if (pos != 36) {
+                throw pos;
+            }
+
+                matrices.push_back(m);
+            }
+
 
         return matrices;
     }
@@ -73,7 +77,13 @@ namespace Matrix6fFileReader {
 
         readNextNLines(fin, lines, N);
 
-        matrices = convertLinesToMatrices(lines);
+        try {
+            matrices = convertLinesToMatrices(lines);
+        }
+        catch(int numElements) {
+            std::cerr << "Incorrect number of elements in Matrix6fReader.\nGot " << numElements << " when expecting 36." << std::endl;
+            return false;
+        }
 
         return !matrices.empty();
     }
