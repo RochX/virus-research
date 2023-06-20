@@ -8,6 +8,7 @@
 #include "EigenTypes.hpp"
 #include "IcosahedralGroup.hpp"
 #include "Matrix6fFileReader.hpp"
+#include "PermutationGroup.hpp"
 #include "TetrahedralGroup.hpp"
 
 #ifndef EIGEN_DONT_PARALLELIZE
@@ -40,19 +41,22 @@ int main(int argc, char *argv[]) {
     TetrahedralGroup TetrahedralGroup;
     IcosahedralGroup IcosahedralGroup;
 
-    Matrix6fGroup* currentGroup = &TetrahedralGroup;
-
+    // always generate B0 and B1 matrices using ICO
+    Matrix6fGroup* currentGroup = &IcosahedralGroup;
     B0MatricesFileName = currDirectory + currentGroup->groupName() + "_B0_matrices.csv";
     B1MatricesFileName = currDirectory + currentGroup->groupName() + "_B1_matrices.csv";
-    CentralizerFileName = currDirectory + currentGroup->groupName() + "_centralizer_matrices.csv";
-
     generateAllB0andB1Matrices(*currentGroup, true, true, true);
 
+    // here the group may vary
+    currentGroup = &TetrahedralGroup;
+    CentralizerFileName = currDirectory + currentGroup->groupName() + "_centralizer_matrices.csv";
     generateAllCentralizerCandidates(*currentGroup, B0MatricesFileName, B1MatricesFileName, true);
 }
 
 // using two filenames, generate B_1B_0^-1 and check if it's in the centralizer
 void generateAllCentralizerCandidates(Matrix6fGroup &matrixGroup, const std::string &B0_filename, const std::string &B1_filename, bool permuteB1) {
+    PermutationGroup permutationGroup;
+
     std::ifstream b0in (B0_filename);
     std::ifstream b1in (B1_filename);
     std::ofstream centralizerFout(CentralizerFileName);
@@ -68,6 +72,12 @@ void generateAllCentralizerCandidates(Matrix6fGroup &matrixGroup, const std::str
 
     std::vector<Matrix6f> b1matrices;
     Matrix6f b0matrix;
+    std::vector<Matrix6f> permutationMatrices = permutationGroup.getGroupElements();
+
+    if (!permuteB1) {
+        permutationMatrices.clear();
+        permutationMatrices.emplace_back(Matrix6f::Identity());
+    }
 
     int b0count, b1count;
     int b0CAP = INT32_MAX;
@@ -78,9 +88,9 @@ void generateAllCentralizerCandidates(Matrix6fGroup &matrixGroup, const std::str
     std::cout << "Start checking all pairs of B0 and B1..." << std::endl;
     auto start_time = omp_get_wtime();
 
-    #pragma omp parallel num_threads(NUM_THREADS) private(b0count, b1count, b0matrix, b1matrices, b1line) shared(CommaSepVals, centralizerFout, matrixGroup, start_time, std::cout, N, b0CAP, b1CAP, b0in, b1in, group_centralizer_count) default(none)
+    #pragma omp parallel num_threads(NUM_THREADS) private(b0count, b1count, b0matrix, b1matrices, b1line) shared(permutationMatrices, CommaSepVals, centralizerFout, matrixGroup, start_time, std::cout, N, b0CAP, b1CAP, b0in, b1in, group_centralizer_count) default(none)
     {
-        #pragma omp single nowait
+        #pragma omp master
         {
             b0count = 0;
             // read B0 matrices
@@ -97,14 +107,19 @@ void generateAllCentralizerCandidates(Matrix6fGroup &matrixGroup, const std::str
                 while (Matrix6fFileReader::readNextNMatrices(b1in, b1matrices, N)) {
                     // check for ICO centralizer using B_1B_0^-1
                     for (const Matrix6f &b1: b1matrices) {
-                        // assign task to check this pair of matrices
-                        #pragma omp task shared(centralizerFout, CommaSepVals, matrixGroup, group_centralizer_count) firstprivate(b0matrix, b1) default(none)
+                        // assign task to check this pair of matrices (with permutation)
+                        #pragma omp task shared(std::cout, permutationMatrices, centralizerFout, CommaSepVals, matrixGroup, group_centralizer_count) firstprivate(b0matrix, b1) default(none)
                         {
-                            if (matrixGroup.checkIfInCentralizer(b1 * b0matrix.inverse())) {
-                                #pragma omp critical
+                            for (const Matrix6f &P: permutationMatrices) {
                                 {
-                                    centralizerFout << b1.format(CommaSepVals) << std::endl << b0matrix.format(CommaSepVals) << std::endl << std::endl;
-                                    group_centralizer_count++;
+                                    if (matrixGroup.checkIfInCentralizer(b1 * P * b0matrix.inverse())) {
+                                        #pragma omp critical
+                                        {
+                                            centralizerFout << b1.format(CommaSepVals) << std::endl
+                                                            << b0matrix.format(CommaSepVals) << std::endl << std::endl;
+                                            group_centralizer_count++;
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -121,11 +136,15 @@ void generateAllCentralizerCandidates(Matrix6fGroup &matrixGroup, const std::str
                 b0count++;
                 auto current_time = omp_get_wtime();
                 if (b0count % 10000 == 0) {
-                    std::cout << "Number of B0 processed: " << b0count << " in " << (current_time-start_time) << " seconds." << std::endl;
+                    std::cout << "Number of B0 assigned: " << b0count << " in " << (current_time-start_time) << " seconds." << std::endl;
                 }
                 if (b0count >= b0CAP)
                     break;
             }
+        }
+
+        if (omp_get_thread_num() == 0) {
+            std::cout << "All tasks assigned." << std::endl;
         }
 
         #pragma omp taskwait
