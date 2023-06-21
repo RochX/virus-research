@@ -23,6 +23,7 @@ void generateAllCentralizerCandidates(Matrix6fGroup&, const std::string&, const 
 void generateAllB0andB1Matrices(Matrix6fGroup&, bool, bool, bool = false);
 void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>>&, const std::string&, bool);
 void append_vector(std::vector<Vector6f>&, std::vector<Vector6f>&, bool = true);
+std::vector<float> findPossibleTEntries(const std::string&, const std::string&, int, int);
 
 std::string B0MatricesFileName;
 std::string B1MatricesFileName;
@@ -47,10 +48,103 @@ int main(int argc, char *argv[]) {
     B1MatricesFileName = currDirectory + currentGroup->groupName() + "_B1_matrices.csv";
     generateAllB0andB1Matrices(*currentGroup, true, true, true);
 
-    // here the group may vary
-    currentGroup = &TetrahedralGroup;
-    CentralizerFileName = currDirectory + currentGroup->groupName() + "_centralizer_matrices.csv";
-    generateAllCentralizerCandidates(*currentGroup, B0MatricesFileName, B1MatricesFileName, true);
+//    // here the group may vary
+//    currentGroup = &TetrahedralGroup;
+//    CentralizerFileName = currDirectory + currentGroup->groupName() + "_centralizer_matrices.csv";
+//    generateAllCentralizerCandidates(*currentGroup, B0MatricesFileName, B1MatricesFileName, true);
+
+    std::vector<float> T_entries = findPossibleTEntries(B0MatricesFileName, B1MatricesFileName, 1000, 0);
+    for (float f : T_entries) {
+        std::cout << f;
+        if (f != T_entries.back()) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << std::endl;
+}
+
+std::vector<float> findPossibleTEntries(const std::string &B0_filename, const std::string &B1_filename, int sample_size, int skip) {
+    std::cout << "Finding all possible T entries..." << std::endl;
+    auto start_time = omp_get_wtime();
+
+    std::ifstream b0in (B0_filename);
+    std::ifstream b1in (B1_filename);
+
+    std::string csv_header;
+    getline(b0in, csv_header);
+    getline(b1in, csv_header);
+
+    Matrix6f dump;
+    // for simplicity just check a sample_size * sample_size, but with an option to skip through the file.
+    for (int i = 0; i < skip; ++i) {
+        Matrix6fFileReader::readNextMatrix(b0in, dump);
+        Matrix6fFileReader::readNextMatrix(b1in, dump);
+    }
+
+    // check if sample_size is too big, and cap it if yes with warning...
+    int MAX_SAMPLE_SIZE = 1000000;
+    if (sample_size >= MAX_SAMPLE_SIZE) {
+        std::cout << "WARNING: Sample size over 1 million, capping to 1 million." << std::endl;
+        sample_size = MAX_SAMPLE_SIZE;
+    }
+
+    std::vector<float> possible_T_entries;
+    std::vector<Matrix6f> B0_matrices_list, B1_matrices_list;
+    Matrix6fFileReader::readNextNMatrices(b0in, B0_matrices_list, sample_size);
+    Matrix6fFileReader::readNextNMatrices(b1in, B1_matrices_list, sample_size);
+    #pragma omp parallel num_threads(NUM_THREADS) shared(possible_T_entries, B0_matrices_list, B1_matrices_list) default(none)
+    {
+        const float EPSILON = 0.0001;
+        std::vector<float> thread_possible_T_entries;
+        #pragma omp for collapse(2)
+        for (int i = 0; i < B0_matrices_list.size(); ++i) {
+            for (int j = 0; j < B1_matrices_list.size(); ++j) {
+                Matrix6f B0_m = B0_matrices_list[i];
+                Matrix6f B1_m = B1_matrices_list[j];
+                Matrix6f T = B1_m * B0_m.inverse();
+                bool add_current_entry;
+
+                // check if any of the entries of T are already accounted for.
+                for (int k = 0; k < 36; ++k) {
+                    add_current_entry = true;
+                    for (float f : thread_possible_T_entries) {
+                        if (std::fabs(T(k / 6, k % 6) - f) < EPSILON) {
+                            add_current_entry = false;
+                            break;
+                        }
+                    }
+
+                    if (add_current_entry) {
+                        thread_possible_T_entries.push_back(T(k / 6, k % 6));
+                    }
+                }
+            }
+        }
+
+        // combine into one list
+        #pragma omp critical
+        {
+            bool add_to_list;
+            for (float f : thread_possible_T_entries) {
+                add_to_list = true;
+                for (float t : possible_T_entries) {
+                    if (std::fabs(f - t) < EPSILON) {
+                        add_to_list = false;
+                        break;
+                    }
+                }
+
+                if (add_to_list)
+                    possible_T_entries.push_back(f);
+            }
+        }
+    }
+
+    std::sort(possible_T_entries.begin(), possible_T_entries.end());
+    auto current_time = omp_get_wtime();
+    std::cout << "Done finding T entries, done in " << (current_time-start_time) << std::endl;
+
+    return possible_T_entries;
 }
 
 // using two filenames, generate B_1B_0^-1 and check if it's in the centralizer
