@@ -1,0 +1,18 @@
+#include <vector>
+#include <cmath>
+#include <algorithm>
+
+#include "EigenTypes.hpp"
+
+#ifndef VIRUS_RESEARCH_STD_VECTOR_FUNCTIONS_HPP
+#define VIRUS_RESEARCH_STD_VECTOR_FUNCTIONS_HPP
+
+namespace std_vector_functions {
+    template <typename T>
+    void append_vector(std::vector<T>& v1, std::vector<T>& v2, bool removeDups);
+
+    template <typename T>
+    void push_backIfNotInVector(std::vector<T> &vector, T element, T epsilon = 0);
+}
+
+#endif //VIRUS_RESEARCH_STD_VECTOR_FUNCTIONS_HPP

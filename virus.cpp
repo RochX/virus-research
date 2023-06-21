@@ -10,6 +10,7 @@
 #include "Matrix6fFileReader.hpp"
 #include "PermutationGroup.hpp"
 #include "TetrahedralGroup.hpp"
+#include "std_vector_functions.hpp"
 
 #ifndef EIGEN_DONT_PARALLELIZE
 #define EIGEN_DONT_PARALLELIZE
@@ -22,13 +23,9 @@ using namespace EigenType;
 void generateAllCentralizerCandidates(Matrix6fGroup&, const std::string&, const std::string&, bool);
 void generateAllB0andB1Matrices(Matrix6fGroup&, bool, bool, bool = false);
 void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>>&, const std::string&, bool);
-void append_vector(std::vector<Vector6f>&, std::vector<Vector6f>&, bool = true);
 std::vector<float> findPossibleTEntriesWithOneSample(const std::string &B0_filename, const std::string &B1_filename, int sample_size, int skip);
 std::vector<float> findPossibleTEntriesBySampling(const std::string &B0_filename, const std::string &B1_filename, int num_samples, int sample_size);
 std::vector<float> findPossibleTEntriesHardCoded();
-
-template <typename T>
-void push_backIfNotInVector(std::vector<T> &vector, T element, T epsilon = 0);
 
 std::string B0MatricesFileName;
 std::string B1MatricesFileName;
@@ -75,17 +72,17 @@ std::vector<float> findPossibleTEntriesHardCoded() {
 
     float sixths = -10;
     while (sixths <= 10) {
-        push_backIfNotInVector<float>(possible_T_entries, sixths, 0.0001);
+        std_vector_functions::push_backIfNotInVector<float>(possible_T_entries, sixths, 0.0001);
         sixths += 1.0f/6;
     }
 
     float fourths = -10;
     while (fourths <= 10) {
-        push_backIfNotInVector<float>(possible_T_entries, fourths, 0.0001);
+        std_vector_functions::push_backIfNotInVector<float>(possible_T_entries, fourths, 0.0001);
         fourths += 1.0f/4;
     }
 
-    push_backIfNotInVector<float>(possible_T_entries, 10, 0.0001);
+    std_vector_functions::push_backIfNotInVector<float>(possible_T_entries, 10, 0.0001);
 
     std::sort(possible_T_entries.begin(), possible_T_entries.end());
     return possible_T_entries;
@@ -99,7 +96,7 @@ std::vector<float> findPossibleTEntriesBySampling(const std::string &B0_filename
         std::vector<float> T_entries = findPossibleTEntriesWithOneSample(B0MatricesFileName, B1MatricesFileName,
                                                                          sample_size, k * sample_size);
         for (float f: T_entries) {
-            push_backIfNotInVector<float>(possible_T_entries, f, 0.0001);
+            std_vector_functions::push_backIfNotInVector<float>(possible_T_entries, f, 0.0001);
         }
     }
 
@@ -150,7 +147,7 @@ std::vector<float> findPossibleTEntriesWithOneSample(const std::string &B0_filen
 
                 // check if any of the entries of T are already accounted for.
                 for (int k = 0; k < 36; ++k) {
-                    push_backIfNotInVector<float>(thread_possible_T_entries, T(k / 6, k % 6), 0.0001);
+                    std_vector_functions::push_backIfNotInVector<float>(thread_possible_T_entries, T(k / 6, k % 6), 0.0001);
                 }
             }
         }
@@ -179,20 +176,6 @@ std::vector<float> findPossibleTEntriesWithOneSample(const std::string &B0_filen
     std::cout << "Done finding T entries, done in " << (current_time-start_time) << std::endl;
 
     return possible_T_entries;
-}
-
-template <typename T>
-void push_backIfNotInVector(std::vector<T> &vector, T element, T epsilon) {
-    bool addElement = true;
-    for (T t : vector) {
-        if (std::fabs(t-element) <= epsilon) {
-            addElement = false;
-            break;
-        }
-    }
-
-    if (addElement)
-        vector.push_back(element);
 }
 
 // using two filenames, generate B_1B_0^-1 and check if it's in the centralizer
@@ -329,10 +312,10 @@ void generateAllB0andB1Matrices(Matrix6fGroup &matrixGroup, bool generateB0, boo
     orbit_Dinvf = matrixGroup.getOrbitOfVector(D.inverse() * f);
 
     // create P_0 by appending all the orbits together
-    append_vector(P_0, orbit_s);
-    append_vector(P_0, orbit_b);
-    append_vector(P_0, orbit_Dinvb);
-    append_vector(P_0, orbit_Dinvf);
+    std_vector_functions::append_vector<Vector6f>(P_0, orbit_s, true);
+    std_vector_functions::append_vector<Vector6f>(P_0, orbit_b, true);
+    std_vector_functions::append_vector<Vector6f>(P_0, orbit_Dinvb, true);
+    std_vector_functions::append_vector<Vector6f>(P_0, orbit_Dinvf, true);
 
     if (generatePartial) {
         P_0.clear();
@@ -358,11 +341,11 @@ void generateAllB0andB1Matrices(Matrix6fGroup &matrixGroup, bool generateB0, boo
     orbit_Dinvb = matrixGroup.getOrbitOfVector(D.inverse()*b);
     orbit_Dinvf = matrixGroup.getOrbitOfVector(D.inverse()*f);
 
-    append_vector(P_1, orbit_b);
-    append_vector(P_1, orbit_Dinvs);
-    append_vector(P_1, orbit_Dinvb);
-    append_vector(P_1, orbit_Dinvf);
-    append_vector(P_1, orbit_s);
+    std_vector_functions::append_vector<Vector6f>(P_1, orbit_b, true);
+    std_vector_functions::append_vector<Vector6f>(P_1, orbit_Dinvs, true);
+    std_vector_functions::append_vector<Vector6f>(P_1, orbit_Dinvb, true);
+    std_vector_functions::append_vector<Vector6f>(P_1, orbit_Dinvf, true);
+    std_vector_functions::append_vector<Vector6f>(P_1, orbit_s, true);
 
     if (generatePartial) {
         P_1.clear();
@@ -474,20 +457,4 @@ void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>> &P, 
     std::cout << "\nFinished outputting to " << filename << "." << std::endl;
     std::cout << "Outputted " << totalrank6Pmatrices << " matrices of rank 6." << std::endl;
     std::cout << "Total time taken:\t" << (current_time - start_time) << " seconds" << std::endl << std::endl;
-}
-
-// append the contents of v2 to v1, possibly checking for duplicates
-void append_vector(std::vector<Vector6f>& v1, std::vector<Vector6f>& v2, bool removeDups) {
-    for (const Vector6f &v : v2) {
-        // if bool is true only append if it is not a duplicate
-        if (removeDups) {
-            if (std::find(v1.begin(), v1.end(), v) == v1.end()) {
-                v1.push_back(v);
-            }
-        }
-        // otherwise just append without checking
-        else {
-            v1.push_back(v);
-        }
-    }
 }
