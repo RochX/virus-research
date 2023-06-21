@@ -6,13 +6,12 @@
 #define VIRUS_RESEARCH_ICOSAHEDRALGROUP_HPP
 
 class IcosahedralGroup : public Matrix6fGroup {
-private:
-    EigenType::Matrix6f matrixFormOfCentralizer(float, float);
-
 public:
     IcosahedralGroup();
     bool checkIfInCentralizer(EigenType::Matrix6f) override;
     std::string groupName() override;
+
+    static EigenType::Matrix6f matrixFormOfCentralizer(float, float);
 };
 
 
