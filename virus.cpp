@@ -23,7 +23,12 @@ void generateAllCentralizerCandidates(Matrix6fGroup&, const std::string&, const 
 void generateAllB0andB1Matrices(Matrix6fGroup&, bool, bool, bool = false);
 void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>>&, const std::string&, bool);
 void append_vector(std::vector<Vector6f>&, std::vector<Vector6f>&, bool = true);
-std::vector<float> findPossibleTEntries(const std::string&, const std::string&, int, int);
+std::vector<float> findPossibleTEntriesWithOneSample(const std::string &B0_filename, const std::string &B1_filename, int sample_size, int skip);
+std::vector<float> findPossibleTEntriesBySampling(const std::string &B0_filename, const std::string &B1_filename, int num_samples, int sample_size);
+std::vector<float> findPossibleTEntriesHardCoded();
+
+template <typename T>
+void push_backIfNotInVector(std::vector<T> &vector, T element, T epsilon = 0);
 
 std::string B0MatricesFileName;
 std::string B1MatricesFileName;
@@ -53,7 +58,9 @@ int main(int argc, char *argv[]) {
 //    CentralizerFileName = currDirectory + currentGroup->groupName() + "_centralizer_matrices.csv";
 //    generateAllCentralizerCandidates(*currentGroup, B0MatricesFileName, B1MatricesFileName, true);
 
-    std::vector<float> T_entries = findPossibleTEntries(B0MatricesFileName, B1MatricesFileName, 1000, 0);
+    std::vector<float> T_entries;
+//    T_entries = findPossibleTEntriesBySampling(B0MatricesFileName, B1MatricesFileName, 10, 1000);
+    T_entries = findPossibleTEntriesHardCoded();
     for (float f : T_entries) {
         std::cout << f;
         if (f != T_entries.back()) {
@@ -63,7 +70,44 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl;
 }
 
-std::vector<float> findPossibleTEntries(const std::string &B0_filename, const std::string &B1_filename, int sample_size, int skip) {
+std::vector<float> findPossibleTEntriesHardCoded() {
+    std::vector<float> possible_T_entries;
+
+    float sixths = -10;
+    while (sixths <= 10) {
+        push_backIfNotInVector<float>(possible_T_entries, sixths, 0.0001);
+        sixths += 1.0f/6;
+    }
+
+    float fourths = -10;
+    while (fourths <= 10) {
+        push_backIfNotInVector<float>(possible_T_entries, fourths, 0.0001);
+        fourths += 1.0f/4;
+    }
+
+    push_backIfNotInVector<float>(possible_T_entries, 10, 0.0001);
+
+    std::sort(possible_T_entries.begin(), possible_T_entries.end());
+    return possible_T_entries;
+}
+
+std::vector<float> findPossibleTEntriesBySampling(const std::string &B0_filename, const std::string &B1_filename, int num_samples, int sample_size) {
+    std::vector<float> possible_T_entries;
+
+    for (int k = 0; k < num_samples; ++k) {
+        std::cout << "Sample " << k << ": ";
+        std::vector<float> T_entries = findPossibleTEntriesWithOneSample(B0MatricesFileName, B1MatricesFileName,
+                                                                         sample_size, k * sample_size);
+        for (float f: T_entries) {
+            push_backIfNotInVector<float>(possible_T_entries, f, 0.0001);
+        }
+    }
+
+    std::sort(possible_T_entries.begin(), possible_T_entries.end());
+    return possible_T_entries;
+}
+
+std::vector<float> findPossibleTEntriesWithOneSample(const std::string &B0_filename, const std::string &B1_filename, int sample_size, int skip) {
     std::cout << "Finding all possible T entries..." << std::endl;
     auto start_time = omp_get_wtime();
 
@@ -106,17 +150,7 @@ std::vector<float> findPossibleTEntries(const std::string &B0_filename, const st
 
                 // check if any of the entries of T are already accounted for.
                 for (int k = 0; k < 36; ++k) {
-                    add_current_entry = true;
-                    for (float f : thread_possible_T_entries) {
-                        if (std::fabs(T(k / 6, k % 6) - f) < EPSILON) {
-                            add_current_entry = false;
-                            break;
-                        }
-                    }
-
-                    if (add_current_entry) {
-                        thread_possible_T_entries.push_back(T(k / 6, k % 6));
-                    }
+                    push_backIfNotInVector<float>(thread_possible_T_entries, T(k / 6, k % 6), 0.0001);
                 }
             }
         }
@@ -145,6 +179,20 @@ std::vector<float> findPossibleTEntries(const std::string &B0_filename, const st
     std::cout << "Done finding T entries, done in " << (current_time-start_time) << std::endl;
 
     return possible_T_entries;
+}
+
+template <typename T>
+void push_backIfNotInVector(std::vector<T> &vector, T element, T epsilon) {
+    bool addElement = true;
+    for (T t : vector) {
+        if (std::fabs(t-element) <= epsilon) {
+            addElement = false;
+            break;
+        }
+    }
+
+    if (addElement)
+        vector.push_back(element);
 }
 
 // using two filenames, generate B_1B_0^-1 and check if it's in the centralizer
