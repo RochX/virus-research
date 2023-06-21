@@ -20,12 +20,19 @@
 
 using namespace EigenType;
 
+std::vector<Matrix6f> GetAllPossibleTMatricesInIco(const std::vector<float>& T_entries);
 void generateAllCentralizerCandidates(Matrix6fGroup&, const std::string&, const std::string&, bool);
 void generateAllB0andB1Matrices(Matrix6fGroup&, bool, bool, bool = false);
 void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>>&, const std::string&, bool);
+
+// TODO: move these functions into their own file...
 std::vector<float> findPossibleTEntriesWithOneSample(const std::string &B0_filename, const std::string &B1_filename, int sample_size, int skip);
 std::vector<float> findPossibleTEntriesBySampling(const std::string &B0_filename, const std::string &B1_filename, int num_samples, int sample_size);
 std::vector<float> findPossibleTEntriesHardCoded();
+std::vector<Matrix6f> GetAllPossibleTMatricesInIco(const std::vector<float>& T_entries);
+
+bool AllEntriesOfParticularValues(const Matrix6f& matrix, const std::vector<float>& valid_values);
+bool FloatsAreApproxEqual(float x, float y);
 
 std::string B0MatricesFileName;
 std::string B1MatricesFileName;
@@ -58,13 +65,36 @@ int main(int argc, char *argv[]) {
     std::vector<float> T_entries;
 //    T_entries = findPossibleTEntriesBySampling(B0MatricesFileName, B1MatricesFileName, 10, 1000);
     T_entries = findPossibleTEntriesHardCoded();
-    for (float f : T_entries) {
-        std::cout << f;
-        if (f != T_entries.back()) {
-            std::cout << ", ";
+
+    std::vector<Matrix6f> T_matrices = GetAllPossibleTMatricesInIco(T_entries);
+
+    std::ifstream b0in (B0MatricesFileName);
+    std::string csv_header;
+    getline(b0in, csv_header);
+
+    std::vector<float> B1_vals {-1, -0.5, 0, 0.5, 1};
+    long long invalid_count = 0;
+    Matrix6f B0_m;
+    const int NUM_CHECK = 10;
+    for (int i = 0; i < NUM_CHECK && Matrix6fFileReader::readNextMatrix(b0in, B0_m); i++) {
+        for (const Matrix6f& T : T_matrices) {
+            if (!AllEntriesOfParticularValues(T*B0_m, B1_vals)) {
+                invalid_count++;
+            }
         }
     }
-    std::cout << std::endl;
+    std::cout << "Number invalid is: " << invalid_count << " out of " << T_matrices.size()*NUM_CHECK << std::endl;
+}
+
+std::vector<Matrix6f> GetAllPossibleTMatricesInIco(const std::vector<float>& T_entries) {
+    std::vector<Matrix6f> T_matrices_in_ICO;
+    for (float f1 : T_entries) {
+        for (float f2: T_entries) {
+            T_matrices_in_ICO.push_back(IcosahedralGroup::matrixFormOfCentralizer(f1, f2));
+        }
+    }
+
+    return T_matrices_in_ICO;
 }
 
 std::vector<float> findPossibleTEntriesHardCoded() {
@@ -457,4 +487,32 @@ void fileOutputAllFullRankMatrices(const std::vector<std::vector<Vector6f>> &P, 
     std::cout << "\nFinished outputting to " << filename << "." << std::endl;
     std::cout << "Outputted " << totalrank6Pmatrices << " matrices of rank 6." << std::endl;
     std::cout << "Total time taken:\t" << (current_time - start_time) << " seconds" << std::endl << std::endl;
+}
+
+bool AllEntriesOfParticularValues(const Matrix6f& matrix, const std::vector<float>& valid_values) {
+    bool entry_is_valid;
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < 6; ++j) {
+            entry_is_valid = false;
+
+            // check if it is any of the valid values
+            for (float val : valid_values) {
+                if (FloatsAreApproxEqual(matrix(i,j), val))
+                    entry_is_valid = true;
+            }
+
+            if (!entry_is_valid)
+                return false;
+        }
+    }
+
+    // every entry is valid
+    return true;
+}
+
+bool FloatsAreApproxEqual(float x, float y) {
+    const float relative_difference_factor = 0.0001;    // 0.01%
+    const float greater_magnitude = std::max(std::fabs(x),std::fabs(y));
+
+    return std::fabs(x-y) < relative_difference_factor * greater_magnitude;
 }
