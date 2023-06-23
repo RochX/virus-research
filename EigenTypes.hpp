@@ -9,6 +9,7 @@
 namespace EigenType {
     typedef Eigen::Vector<float, 6> Vector6f;
     typedef Eigen::Matrix<float, 6, 6> Matrix6f;
+    static Eigen::IOFormat COMMA_SEP_VALS(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "", "");
 }
 
 #endif //VIRUS_RESEARCH_MATRIXTYPE_H
