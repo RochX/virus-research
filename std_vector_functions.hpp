@@ -13,6 +13,9 @@ namespace std_vector_functions {
 
     template <typename T>
     void push_backIfNotInVector(std::vector<T> &vector, T element, T epsilon = 0);
+
+    template <typename T>
+    std::vector<T> unravelTwoDimVector(std::vector<std::vector<T>> two_dim_vector, bool remove_duplicates = false);
 }
 
 #endif //VIRUS_RESEARCH_STD_VECTOR_FUNCTIONS_HPP

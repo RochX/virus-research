@@ -3,6 +3,7 @@
 // need to explicitly declare what types are used with the template
 template void std_vector_functions::append_vector(std::vector<EigenType::Vector6f>& v1, std::vector<EigenType::Vector6f>& v2, bool removeDups);
 template void std_vector_functions::push_backIfNotInVector(std::vector<float> &vector, float element, float epsilon);
+template std::vector<EigenType::Vector6f> std_vector_functions::unravelTwoDimVector(std::vector<std::vector<EigenType::Vector6f>> two_dim_vector, bool remove_duplicates);
 
 // append the contents of v2 to v1, possibly checking for duplicates
 template <typename T>
@@ -33,4 +34,26 @@ void std_vector_functions::push_backIfNotInVector(std::vector<T> &vector, T elem
 
     if (addElement)
         vector.push_back(element);
+}
+
+template <typename T>
+std::vector<T> std_vector_functions::unravelTwoDimVector(std::vector<std::vector<T>> two_dim_vector, bool remove_duplicates) {
+    std::vector<T> unraveled;
+
+    for (std::vector<T> vector : two_dim_vector) {
+        for (T element : vector) {
+            if (remove_duplicates) {
+                // if element not in unraveled version, add it
+                if (std::find(unraveled.begin(), unraveled.end(), element) == unraveled.end()) {
+                    unraveled.push_back(element);
+                }
+            }
+            // just push back all elements if not checking for duplicates
+            else {
+                unraveled.push_back(element);
+            }
+        }
+    }
+
+    return unraveled;
 }
