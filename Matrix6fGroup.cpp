@@ -54,3 +54,11 @@ std::vector<EigenType::Vector6f> Matrix6fGroup::getOrbitOfVector(const EigenType
 
     return orbit;
 }
+
+std::vector<std::vector<EigenType::Vector6f>> Matrix6fGroup::createOrbitsFromGenerators(const std::vector<EigenType::Vector6f>& generators) {
+    std::vector<std::vector<EigenType::Vector6f>> orbits;
+    for (const EigenType::Vector6f& generator : generators) {
+        orbits.push_back(Matrix6fGroup::getOrbitOfVector(generator));
+    }
+    return orbits;
+}

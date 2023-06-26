@@ -15,6 +15,7 @@ protected:
 public:
     std::vector<EigenType::Matrix6f> getGroupElements();
     std::vector<EigenType::Vector6f> getOrbitOfVector(const EigenType::Vector6f&);
+    std::vector<std::vector<EigenType::Vector6f>> createOrbitsFromGenerators(const std::vector<EigenType::Vector6f>& generators);
 
     virtual std::string groupName() =0;
     virtual bool checkIfInCentralizer(EigenType::Matrix6f) =0;

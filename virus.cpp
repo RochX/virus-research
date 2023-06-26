@@ -54,9 +54,8 @@ int main(int argc, char *argv[]) {
     std::vector<std::vector<Vector6f>> starting_orbits, ending_orbits;
     std::vector<Vector6f> starting_point_cloud, ending_point_cloud;
 
-    Matrix6fGroup* current_matrix_group = &icosahedral_group;
-    starting_orbits = createOrbitsFromGenerators(starting_generators, *current_matrix_group);
-    ending_orbits = createOrbitsFromGenerators(ending_generators, *current_matrix_group);
+    starting_orbits = icosahedral_group.createOrbitsFromGenerators(starting_generators);
+    ending_orbits = icosahedral_group.createOrbitsFromGenerators(ending_generators);
     starting_point_cloud = std_vector_functions::unravelTwoDimVector(starting_orbits, true);
     ending_point_cloud = std_vector_functions::unravelTwoDimVector(ending_orbits, true);
 
@@ -95,7 +94,7 @@ int main(int argc, char *argv[]) {
             fout << transition_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
             fout << "All B0 Matrices work." << std::endl;
             fout << std::endl;
-            std::cout << "Scalar multiple of identity, skipping..." << std::endl;
+            std::cout << "Plus minus identity matrix, skipping..." << std::endl;
             continue;
         }
 
@@ -160,14 +159,6 @@ std::vector<Vector6f> endingGeneratorsOfTCV() {
     generators.emplace_back(D.inverse() * f);
 
     return generators;
-}
-
-std::vector<std::vector<Vector6f>> createOrbitsFromGenerators(const std::vector<Vector6f>& generators, Matrix6fGroup& matrix_group) {
-    std::vector<std::vector<Vector6f>> orbits;
-    for (const Vector6f& generator : generators) {
-        orbits.push_back(matrix_group.getOrbitOfVector(generator));
-    }
-    return orbits;
 }
 
 std::vector<float> possibleTransitionMatrixEntriesHardCoded() {
