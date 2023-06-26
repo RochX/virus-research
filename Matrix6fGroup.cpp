@@ -33,6 +33,10 @@ void Matrix6fGroup::createGroupFromTwoGeneratorsAndKnownSize(const EigenType::Ma
             break;
         }
     }
+
+    if (groupElements.size() != desiredSize) {
+        std::cerr << "WARNING: Unable to make group with " << desiredSize << " number of elements. Current size is " << groupElements.size() << std::endl;
+    }
 }
 
 std::vector<EigenType::Matrix6f> Matrix6fGroup::getGroupElements() {
