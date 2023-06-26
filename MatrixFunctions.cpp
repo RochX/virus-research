@@ -2,17 +2,24 @@
 
 // anonymous namespace for private functions
 namespace {
+    bool FloatIsApproxZero(float x) {
+        const float epsilon = 0.00001;
+        return std::fabs(x) < epsilon;
+    }
+
     bool FloatsAreApproxEqual(float x, float y) {
+        if (x < 0.00001)
+            return FloatIsApproxZero(y);
+        if (y < 0.00001)
+            return FloatIsApproxZero(x);
+
         const float relative_difference_factor = 0.0001;    // 0.01%
         const float greater_magnitude = std::max(std::fabs(x),std::fabs(y));
 
         return std::fabs(x-y) < relative_difference_factor * greater_magnitude;
     }
 
-    bool FloatIsApproxZero(float x) {
-        const float epsilon = 0.00001;
-        return std::fabs(x) < epsilon;
-    }
+
 }
 
 namespace MatrixFunctions {
@@ -46,8 +53,10 @@ namespace MatrixFunctions {
 
                 // check if it is any of the valid values
                 for (float val : values) {
-                    if (FloatsAreApproxEqual(matrix(i,j), val))
+                    if (FloatsAreApproxEqual(matrix(i,j), val)) {
                         entry_is_valid = true;
+                        break;
+                    }
                 }
 
                 if (!entry_is_valid)
