@@ -1,7 +1,9 @@
 #include "std_vector_functions.hpp"
 
 // need to explicitly declare what types are used with the template
+template void std_vector_functions::append_vector(std::vector<float>& v1, std::vector<float>& v2, bool removeDups);
 template void std_vector_functions::append_vector(std::vector<EigenType::Vector6f>& v1, std::vector<EigenType::Vector6f>& v2, bool removeDups);
+template void std_vector_functions::append_vector(std::vector<EigenType::Matrix6f>& v1, std::vector<EigenType::Matrix6f>& v2, bool removeDups);
 template void std_vector_functions::push_backIfNotInVector(std::vector<float> &vector, float element, float epsilon);
 template std::vector<EigenType::Vector6f> std_vector_functions::unravelTwoDimVector(std::vector<std::vector<EigenType::Vector6f>> two_dim_vector, bool remove_duplicates);
 
