@@ -294,14 +294,26 @@ std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPo
 
 std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(const std::vector<Matrix6f>& possible_matrices, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud) {
     std::vector<Matrix6f> reduced_matrices;
+    float max_norm_of_ending_point_cloud = 0;
+
+    // find max norm of ending point cloud
+    for (const Vector6f& v : ending_point_cloud) {
+        max_norm_of_ending_point_cloud = std::max(max_norm_of_ending_point_cloud, v.norm());
+    }
 
     int count = 0;
     auto start_time = omp_get_wtime();
     std::cout << "Start matrix map into ending point cloud reduction..." << std::endl;
+    Vector6f current_Tv_product;
     for (Matrix6f transition_matrix : possible_matrices) {
         for (const Vector6f& starting_vector : starting_point_cloud) {
+            current_Tv_product = transition_matrix*starting_vector;
+            // we can skip this pair if T*v has norm greater than any element of the ending point cloud.
+            if (current_Tv_product.norm() > max_norm_of_ending_point_cloud)
+                continue;
+
             for (const Vector6f& ending_vector : ending_point_cloud) {
-                if ((transition_matrix * starting_vector).isApprox(ending_vector)) {
+                if (current_Tv_product.isApprox(ending_vector)) {
                     // add to list without duplicating
                     MatrixFunctions::fixZeroEntries(transition_matrix);
                     if (std::find(reduced_matrices.begin(), reduced_matrices.end(), transition_matrix) ==
