@@ -7,6 +7,7 @@
 
 #include "DihedralGroupOnTen.hpp"
 #include "EigenTypes.hpp"
+#include "GeneratingVectorsForViruses.hpp"
 #include "IcosahedralGroup.hpp"
 #include "Matrix6fFileReader.hpp"
 #include "MatrixFunctions.hpp"
@@ -19,11 +20,6 @@
 #endif
 
 using namespace EigenType;
-
-std::vector<Vector6f> startingGeneratorsOfTCV();
-std::vector<Vector6f> endingGeneratorsOfTCV();
-std::vector<Vector6f> startingGeneratorsOfSC_TO_FCC_D10();
-std::vector<Vector6f> endingGeneratorsOfSC_TO_FCC_D10();
 
 std::vector<float> possibleTransitionMatrixEntriesHardCoded(float lower_bound = -10, float upper_bound = 10);
 std::vector<Matrix6f> possibleTransitionMatricesInICO(const std::vector<float>& possible_entries);
@@ -48,10 +44,8 @@ int main(int argc, char *argv[]) {
     std::vector<Vector6f> starting_generators, ending_generators;
 
     // eventually these should come from some sort of user input...
-    starting_generators = startingGeneratorsOfTCV();
-    ending_generators = endingGeneratorsOfTCV();
-//    starting_generators = startingGeneratorsOfSC_TO_FCC_D10();
-//    ending_generators = endingGeneratorsOfSC_TO_FCC_D10();
+    starting_generators = GeneratingVectorsForViruses::startingGeneratorsOfTCV();
+    ending_generators = GeneratingVectorsForViruses::endingGeneratorsOfTCV();
 
     std::vector<std::vector<Vector6f>> starting_orbits, ending_orbits;
     std::vector<Vector6f> starting_point_cloud, ending_point_cloud;
@@ -171,79 +165,6 @@ int main(int argc, char *argv[]) {
     fout.close();
 }
 
-std::vector<Vector6f> startingGeneratorsOfTCV() {
-    Matrix6f D;
-    D << 1,1,-1,-1,1,1,
-            1,1,1,-1,-1,1,
-            -1,1,1,1,-1,1,
-            -1,-1,1,1,1,1,
-            1,-1,-1,1,1,1,
-            1,1,1,1,1,1;
-    D *= 0.5;
-
-    Vector6f s, b, f;
-    s << 1, 0, 0, 0, 0, 0;
-    b << 1,-1,1,1,-1,1;
-    b *= 0.5;
-    f << 1,0,0,-1,0,0;
-    f *= 0.5;
-
-    std::vector<Vector6f> generators;
-    generators.push_back(s);
-    generators.push_back(b);
-    generators.emplace_back(D.inverse() * b);
-    generators.emplace_back(D.inverse() * f);
-
-    return generators;
-}
-
-std::vector<Vector6f> endingGeneratorsOfTCV() {
-    Matrix6f D;
-    D << 1,1,-1,-1,1,1,
-            1,1,1,-1,-1,1,
-            -1,1,1,1,-1,1,
-            -1,-1,1,1,1,1,
-            1,-1,-1,1,1,1,
-            1,1,1,1,1,1;
-    D *= 0.5;
-
-    Vector6f s, b, f;
-    s << 1, 0, 0, 0, 0, 0;
-    b << 1,-1,1,1,-1,1;
-    b *= 0.5;
-    f << 1,0,0,-1,0,0;
-    f *= 0.5;
-
-    std::vector<Vector6f> generators;
-    generators.push_back(s);
-    generators.push_back(b);
-    generators.emplace_back(D.inverse() * s);
-    generators.emplace_back(D.inverse() * b);
-    generators.emplace_back(D.inverse() * f);
-
-    return generators;
-}
-
-std::vector<Vector6f> startingGeneratorsOfSC_TO_FCC_D10() {
-    Vector6f s;
-    s << 1, 0, 0, 0, 0, 0;
-
-    std::vector<Vector6f> generators;
-    generators.push_back(s);
-    return generators;
-}
-
-std::vector<Vector6f> endingGeneratorsOfSC_TO_FCC_D10() {
-    Vector6f s, f;
-    s << 1, 0, 0, 0, 0, 0;
-    f << 1,0,0,-1,0,0;
-    f *= 0.5;
-
-    std::vector<Vector6f> generators;
-    generators.push_back(s);
-    generators.push_back(f);
-    return generators;
-}
 
 std::vector<float> possibleTransitionMatrixEntriesHardCoded(float lower_bound, float upper_bound) {
     std::vector<float> possible_T_entries;
