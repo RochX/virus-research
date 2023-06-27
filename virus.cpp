@@ -464,7 +464,7 @@ bool verifyProductComesFromEndingOrbits(const Matrix6f& transition_matrix, const
         curr_orbit_done = false;
         for (const Vector6f& vector : orbit) {
             for (int i = 0; i < product.cols(); i++) {
-                if (vector == product.col(i)) {
+                if (vector.isApprox(product.col(i))) {
                     orbits_represented++;
                     curr_orbit_done = true;
                     break;
