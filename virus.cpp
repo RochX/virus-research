@@ -6,6 +6,7 @@
 #include <omp.h>
 
 #include "DihedralGroupOnTen.hpp"
+#include "DihedralGroupOnSix.hpp"
 #include "EigenTypes.hpp"
 #include "GeneratingVectorsForViruses.hpp"
 #include "IcosahedralGroup.hpp"
@@ -24,6 +25,7 @@ using namespace EigenType;
 std::vector<float> possibleTransitionMatrixEntriesHardCoded(float lower_bound = -10, float upper_bound = 10);
 std::vector<Matrix6f> possibleTransitionMatricesInICO(const std::vector<float>& possible_entries);
 std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
+std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
 std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(const std::vector<Matrix6f>& possible_matrices, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
 
 std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f& transition_matrix, const std::vector<std::vector<Vector6f>>& starting_orbits, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
@@ -88,6 +90,10 @@ int main(int argc, char *argv[]) {
                 starting_point_cloud,
                 ending_point_cloud);
     }
+    else if (centralizer_to_check == "D_6") {
+        possible_transition_matrices = possibleTransitionMatricesInD6WithCheckingMapIntoEndingPointCloud(
+                possible_transition_matrix_entries, starting_point_cloud, ending_point_cloud);
+    }
     else if (centralizer_to_check == "D_10") {
         possible_transition_matrices = possibleTransitionMatricesInD10WithCheckingMapIntoEndingPointCloud(
                 possible_transition_matrix_entries, starting_point_cloud, ending_point_cloud);
@@ -141,12 +147,12 @@ int main(int argc, char *argv[]) {
                     fout << (transition_matrix * curr_b0_matrix).format(EigenType::COMMA_SEP_VALS) << std::endl;
                     fout << std::endl;
 
-                    std::cout << "T:" << std::endl;
-                    std::cout << transition_matrix << std::endl;
-                    std::cout << "B0:" << std::endl;
-                    std::cout << curr_b0_matrix << std::endl;
-                    std::cout << "T*B0:" << std::endl;
-                    std::cout << transition_matrix * curr_b0_matrix << std::endl;
+                    std::cout << "\tT:" << std::endl;
+                    std::cout << transition_matrix.format(EigenType::TAB_INDENT) << std::endl;
+                    std::cout << "\tB0:" << std::endl;
+                    std::cout << curr_b0_matrix.format(EigenType::TAB_INDENT) << std::endl;
+                    std::cout << "\tT*B0:" << std::endl;
+                    std::cout << (transition_matrix * curr_b0_matrix).format(EigenType::TAB_INDENT) << std::endl;
 
                     break;
                 }
@@ -159,8 +165,6 @@ int main(int argc, char *argv[]) {
         }
     }
     std::cout << "Completely done in " << omp_get_wtime()-start_time << " seconds." << std::endl;
-
-    // then I need to see if T*B0 is actually in B1...
 
     fout.close();
 }
@@ -244,6 +248,76 @@ std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPo
     possible_transition_matrices.clear();
     for (const Matrix6f& m1 : reduced_matrices_first_four_vars) {
         for (const Matrix6f& m2 : reduced_matrices_last_two_vars) {
+            possible_transition_matrices.emplace_back(m1+m2);
+        }
+    }
+
+    return possible_transition_matrices;
+}
+
+std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud) {
+    std::vector<Matrix6f> possible_transition_matrices;
+    // x, u, w, s
+    auto start_time = omp_get_wtime();
+    std::vector<Matrix6f> reduced_matrices_first_four_vars, partial_reduced_matrices;
+    int count = 0;
+    Matrix6f possible;
+    for (float x : possible_entries) {
+        possible_transition_matrices.clear();
+        for (float u: possible_entries) {
+            for (float w: possible_entries) {
+                for (float s: possible_entries) {
+                    possible_transition_matrices.push_back(
+                            DihedralGroupOnSix::matrixFormOfCentralizer(x, 0, 0, 0, u, w, 0, s));
+                }
+            }
+        }
+
+        partial_reduced_matrices = reducePossibleMatricesByCheckingMapIntoEndingPointCloud(possible_transition_matrices,
+                                                                                           starting_point_cloud,
+                                                                                           ending_point_cloud);
+
+        std_vector_functions::append_vector<Matrix6f>(reduced_matrices_first_four_vars, partial_reduced_matrices, true);
+
+        count++;
+        std::cout << "First half D6 checked " << count * possible_entries.size() * possible_entries.size() * possible_entries.size()
+                  << " out of " << possible_entries.size() * possible_entries.size() * possible_entries.size() *
+                                   possible_entries.size() << " in " << omp_get_wtime() - start_time << " seconds."
+                  << std::endl;
+    }
+
+    // y, z, t, v
+    count = 0;
+    std::vector<Matrix6f> reduced_matrices_last_four_vars;
+    possible_transition_matrices.clear();
+    for (float y : possible_entries) {
+        possible_transition_matrices.clear();
+        for (float z: possible_entries) {
+            for (float t: possible_entries) {
+                for (float v: possible_entries) {
+                    possible_transition_matrices.push_back(
+                            DihedralGroupOnSix::matrixFormOfCentralizer(0, y, z, t, 0, 0, v, 0));
+                }
+            }
+        }
+
+        partial_reduced_matrices = reducePossibleMatricesByCheckingMapIntoEndingPointCloud(possible_transition_matrices,
+                                                                                           starting_point_cloud,
+                                                                                           ending_point_cloud);
+
+        std_vector_functions::append_vector<Matrix6f>(reduced_matrices_last_four_vars, partial_reduced_matrices, true);
+
+        count++;
+        std::cout << "Second half D6 checked " << count * possible_entries.size() * possible_entries.size() * possible_entries.size()
+                  << " out of " << possible_entries.size() * possible_entries.size() * possible_entries.size() *
+                                   possible_entries.size() << " in " << omp_get_wtime() - start_time << " seconds."
+                  << std::endl;
+    }
+
+    // combine the two lists, hopefully the reduction did enough so this nested loop doesn't take long
+    possible_transition_matrices.clear();
+    for (const Matrix6f& m1 : reduced_matrices_first_four_vars) {
+        for (const Matrix6f& m2 : reduced_matrices_last_four_vars) {
             possible_transition_matrices.emplace_back(m1+m2);
         }
     }
@@ -367,8 +441,8 @@ std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f& transition_matrix, 
 bool verifyProductComesFromEndingOrbits(const Matrix6f& transition_matrix, const Matrix6f& b0_matrix, const std::vector<std::vector<Vector6f>>& ending_orbits, const std::vector<Vector6f>& ending_point_cloud) {
     Matrix6f product = transition_matrix*b0_matrix;
     // check for full rank
-//    if (product.colPivHouseholderQr().rank() < product.cols())
-//        return false;
+    if (product.colPivHouseholderQr().rank() < product.cols())
+        return false;
 
     // check each column actually comes from the ending point cloud
     auto it = ending_point_cloud.begin();
