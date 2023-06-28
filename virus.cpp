@@ -28,9 +28,13 @@ std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPo
 std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
 std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(const std::vector<Matrix6f>& possible_matrices, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
 
-std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f& transition_matrix, const std::vector<std::vector<Vector6f>>& starting_orbits, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
-bool verifyProductComesFromEndingOrbits(const Matrix6f& transition_matrix, const Matrix6f& b0_matrix, const std::vector<std::vector<Vector6f>>& ending_orbits, const std::vector<Vector6f>& ending_point_cloud);
-
+std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f &transition_matrix, const std::vector<std::vector<Vector6f>> &starting_orbits,
+                       const std::vector<Vector6f> &starting_point_cloud,
+                       const std::vector<Vector6f> &ending_point_cloud);
+std::vector<Matrix6fx3f> findPossibleB0Matrices3StartingOrbits(const Matrix6f &transition_matrix, const std::vector<std::vector<Vector6f>> &starting_orbits,
+                                                               const std::vector<Vector6f> &starting_point_cloud,
+                                                               const std::vector<Vector6f> &ending_point_cloud);
+bool verifyProductComesFromEndingOrbits(const Matrix6f& transition_matrix, const Eigen::MatrixXf& b0_matrix, const std::vector<std::vector<Vector6f>>& ending_orbits, const std::vector<Vector6f>& ending_point_cloud);
 
 int main(int argc, char *argv[]) {
     std::string curr_directory;
@@ -46,8 +50,11 @@ int main(int argc, char *argv[]) {
     std::vector<Vector6f> starting_generators, ending_generators;
 
     // eventually these should come from some sort of user input...
-    starting_generators = GeneratingVectorsForViruses::startingGeneratorsOfTCV();
-    ending_generators = GeneratingVectorsForViruses::endingGeneratorsOfTCV();
+    std::string current_virus = "1044-2752";
+    std::string centralizer_to_check = "D_10";     // <-- this is one of: "ICO", "A_4", "D_6", or "D_10"
+    GeneratingVectorsForViruses::pickVirusType(current_virus, starting_generators, ending_generators);
+    assert(!starting_generators.empty());
+    assert(!ending_generators.empty());
 
     std::vector<std::vector<Vector6f>> starting_orbits, ending_orbits;
     std::vector<Vector6f> starting_point_cloud, ending_point_cloud;
@@ -57,7 +64,6 @@ int main(int argc, char *argv[]) {
     starting_point_cloud = std_vector_functions::unravelTwoDimVector(starting_orbits, true);
     ending_point_cloud = std_vector_functions::unravelTwoDimVector(ending_orbits, true);
 
-    std::string current_virus = "TCV";
     std::string b0_filename = current_virus + "_B0_Matrices.csv";
     std::string b1_filename = current_virus + "_B1_Matrices.csv";
 
@@ -81,8 +87,6 @@ int main(int argc, char *argv[]) {
     std::vector<float> possible_transition_matrix_entries = possibleTransitionMatrixEntriesHardCoded();
     std::vector<Matrix6f> possible_transition_matrices;
 
-    // this is one of: "ICO", "A_4", "D_6", or "D_10"
-    std::string centralizer_to_check = "ICO";
     if (centralizer_to_check == "ICO") {
         possible_transition_matrices = possibleTransitionMatricesInICO(possible_transition_matrix_entries);
         possible_transition_matrices = reducePossibleMatricesByCheckingMapIntoEndingPointCloud(
@@ -113,8 +117,8 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "Number of candidate transition matrices: " << possible_transition_matrices.size() << std::endl << std::endl;
 
-    std::ofstream fout (curr_directory + "thingsThatMightWork.txt");
-    std::vector<Matrix6f> possible_B0_matrices;
+    std::ofstream fout (curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + ".txt");
+    std::vector<Matrix6fx3f> possible_B0_matrices;
     Matrix6f b0_matrix;
     std::cout << "Now checking whether any potential T and B0 pairs exist..." << std::endl;
     count = 0;
@@ -127,20 +131,19 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        // TODO: verify we can actually eliminate transition matrices if det(T) = 0
+        // skip matrix if determinant is zero
         if (transition_matrix.determinant() < 0.000001) {
             count++;
-//            std::cout << count << ":\tHas determinant very small (likely zero), skipping..." << std::endl;
             continue;
         }
 
-        possible_B0_matrices = findPossibleB0Matrices(transition_matrix, starting_orbits, starting_point_cloud, ending_point_cloud);
+        possible_B0_matrices = findPossibleB0Matrices3StartingOrbits(transition_matrix, starting_orbits, starting_point_cloud, ending_point_cloud);
         count++;
         if (!possible_B0_matrices.empty()) {
             std::cout << count << ":\t" << possible_B0_matrices.size() << " done in " << omp_get_wtime()-start_time << " seconds." << std::endl;
 
             // check if any of the products work
-            for (const Matrix6f& curr_b0_matrix : possible_B0_matrices) {
+            for (const EigenType::Matrix6fx3f& curr_b0_matrix : possible_B0_matrices) {
                 if (verifyProductComesFromEndingOrbits(transition_matrix, curr_b0_matrix, ending_orbits, ending_point_cloud)) {
                     fout << transition_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
                     fout << curr_b0_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
@@ -160,7 +163,7 @@ int main(int argc, char *argv[]) {
 
 
         }
-        else if (count % 10000 == 0) {
+        else if (count % 1000 == 0) {
             std::cout << count << ":\t" << possible_B0_matrices.size() << " done in " << omp_get_wtime()-start_time << " seconds." << std::endl;
         }
     }
@@ -345,12 +348,9 @@ std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(co
             if (current_Tv_product.norm() > max_norm_of_ending_point_cloud)
                 continue;
 
-            // add to list without duplicating
+            // add to list, no need to check for duplicates because we get each unique tuple of variables.
             MatrixFunctions::fixZeroEntries(transition_matrix);
-            if (std::find(reduced_matrices.begin(), reduced_matrices.end(), transition_matrix) ==
-                reduced_matrices.end()) {
-                reduced_matrices.push_back(transition_matrix);
-            }
+            reduced_matrices.push_back(transition_matrix);
             break;
         }
     }
@@ -358,7 +358,9 @@ std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(co
     return reduced_matrices;
 }
 
-std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f& transition_matrix, const std::vector<std::vector<Vector6f>>& starting_orbits, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud) {
+std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f &transition_matrix, const std::vector<std::vector<Vector6f>> &starting_orbits,
+                       const std::vector<Vector6f> &starting_point_cloud,
+                       const std::vector<Vector6f> &ending_point_cloud) {
     std::vector<Matrix6f> possible_b0_matrices;
 
     std::vector<std::vector<Vector6f>> possible_columns;
@@ -368,7 +370,7 @@ std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f& transition_matrix, 
     while (possible_columns.size() < 6) {
         possible_columns.push_back(starting_point_cloud);
     }
-
+    int total = 1;
     // for each orbit, remove elements where Tm_i is not in ending point cloud
     for (std::vector<Vector6f>& column : possible_columns) {
         for (auto it = column.begin(); it != column.end();) {
@@ -388,7 +390,14 @@ std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f& transition_matrix, 
                 it++;
             }
         }
+
+        total *= column.size();
     }
+
+//    if (total > 100000) {
+//        std::cout << "Matrix has " << total << " which is a lot to check..." << std::endl;
+//        std::cout << transition_matrix << std::endl;
+//    }
 
     // with remaining vectors in each column, brute force generate B0 matrices
     Matrix6f b0_matrix;
@@ -438,8 +447,63 @@ std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f& transition_matrix, 
     return possible_b0_matrices;
 }
 
-bool verifyProductComesFromEndingOrbits(const Matrix6f& transition_matrix, const Matrix6f& b0_matrix, const std::vector<std::vector<Vector6f>>& ending_orbits, const std::vector<Vector6f>& ending_point_cloud) {
-    Matrix6f product = transition_matrix*b0_matrix;
+std::vector<Matrix6fx3f> findPossibleB0Matrices3StartingOrbits(const Matrix6f &transition_matrix, const std::vector<std::vector<Vector6f>> &starting_orbits,
+                                             const std::vector<Vector6f> &starting_point_cloud,
+                                             const std::vector<Vector6f> &ending_point_cloud) {
+    assert(starting_orbits.size() == 3);
+
+    std::vector<Matrix6fx3f> possible_b0_matrices;
+
+    std::vector<std::vector<Vector6f>> possible_columns;
+    for (const std::vector<Vector6f>& orbit : starting_orbits) {
+        possible_columns.push_back(orbit);
+    }
+
+    unsigned long long total = 1;
+    // for each orbit, remove elements where Tm_i is not in ending point cloud
+    for (std::vector<Vector6f>& column : possible_columns) {
+        for (auto it = column.begin(); it != column.end();) {
+            // check if we are in the ending point cloud
+            bool inEndingPointCloud = false;
+            for (const Vector6f& p_1 : ending_point_cloud) {
+                if (p_1.isApprox(transition_matrix * (*it))) {
+                    inEndingPointCloud = true;
+                }
+            }
+
+            // remove element if not in ending point cloud
+            if (!inEndingPointCloud) {
+                it = column.erase(it);
+            }
+            else {
+                it++;
+            }
+        }
+
+        total *= column.size();
+    }
+
+    Matrix6fx3f b0_matrix;
+    b0_matrix.setZero();
+    for (int first = 0; first < possible_columns[0].size(); ++first) {
+        for (int second = 0; second < possible_columns[1].size(); ++second) {
+            for (int third = 0; third < possible_columns[2].size(); ++third) {
+                b0_matrix.col(0) = possible_columns[0][first];
+                b0_matrix.col(1) = possible_columns[1][second];
+                b0_matrix.col(2) = possible_columns[2][third];
+
+                if (b0_matrix.colPivHouseholderQr().rank() == b0_matrix.cols())
+                    possible_b0_matrices.push_back(b0_matrix);
+            }
+        }
+    }
+
+    return possible_b0_matrices;
+}
+
+
+bool verifyProductComesFromEndingOrbits(const Matrix6f& transition_matrix, const Eigen::MatrixXf& b0_matrix, const std::vector<std::vector<Vector6f>>& ending_orbits, const std::vector<Vector6f>& ending_point_cloud) {
+    Eigen::MatrixXf product = transition_matrix*b0_matrix;
     // check for full rank
     if (product.colPivHouseholderQr().rank() < product.cols())
         return false;
