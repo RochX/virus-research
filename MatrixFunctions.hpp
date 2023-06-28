@@ -13,6 +13,7 @@ namespace MatrixFunctions {
     bool entriesOfMatrixAreOfParticularValues(const Eigen::MatrixXf& matrix, const std::vector<float>& values);
     void fixZeroEntries(Eigen::MatrixXf& matrix);
     void fixZeroEntries(EigenType::Matrix6f& matrix);
+    void fixZeroEntries(EigenType::Matrix6fx3f& matrix);
     bool matrixIsScalarOfIdentity(const EigenType::Matrix6f& matrix);
     bool matrixIsPlusMinusIdentity(const EigenType::Matrix6f& matrix);
 } // MatrixFunctions

@@ -88,6 +88,16 @@ namespace MatrixFunctions {
         }
     }
 
+    void fixZeroEntries(EigenType::Matrix6fx3f& matrix) {
+        for (int i = 0; i < matrix.rows(); ++i) {
+            for (int j = 0; j < matrix.cols(); ++j) {
+                if (FloatIsApproxZero(matrix(i,j))) {
+                    matrix(i,j) = 0;
+                }
+            }
+        }
+    }
+
     bool matrixIsScalarOfIdentity(const EigenType::Matrix6f& matrix) {
         return (matrix * 1.0/matrix(0,0)).isApprox(EigenType::Matrix6f::Identity());
     }

@@ -11,7 +11,7 @@ using namespace EigenType;
 namespace {
     // takes a list of lines and converts them to a list of 6x6 matrices
     // precondition: each string in the std::vector lines is 36 comma delimited floats
-    std::vector<Matrix6f> convertLinesToMatrices(const std::vector<string> &lines) {
+    std::vector<Matrix6f> convertLinesToMatrices6f(const std::vector<string> &lines) {
         std::vector<Matrix6f> matrices;
         Matrix6f m;
 
@@ -34,6 +34,34 @@ namespace {
 
                 matrices.push_back(m);
             }
+
+
+        return matrices;
+    }
+
+    std::vector<Matrix6fx3f> convertLinesToMatrices6fx3f(const std::vector<string> &lines) {
+        std::vector<Matrix6fx3f> matrices;
+        Matrix6fx3f m;
+
+        stringstream ss;
+        string cell;
+        int pos;
+        for (const string &line: lines) {
+            ss.clear();
+            ss << line;
+
+            pos = 0;
+            while (getline(ss, cell, ',')) {
+                m((pos / 3) % 6, pos % 3) = stof(cell);
+                pos++;
+            }
+
+            if (pos != 18) {
+                throw pos;
+            }
+
+            matrices.push_back(m);
+        }
 
 
         return matrices;
@@ -78,10 +106,42 @@ namespace Matrix6fFileReader {
         readNextNLines(fin, lines, N);
 
         try {
-            matrices = convertLinesToMatrices(lines);
+            matrices = convertLinesToMatrices6f(lines);
         }
         catch(int numElements) {
             std::cerr << "Incorrect number of elements in Matrix6fReader.\nGot " << numElements << " when expecting 36." << std::endl;
+            return false;
+        }
+
+        return !matrices.empty();
+    }
+}
+
+namespace Matrix6fx3fFileReader {
+    bool readNextMatrix(std::ifstream &fin, EigenType::Matrix6fx3f &m) {
+        std::vector<Matrix6fx3f> matrices;
+
+        // try to read matrix
+        if (readNextNMatrices(fin, matrices, 1)) {
+            // succeeded, assign it
+            m = matrices.front();
+            return true;
+        }
+
+        // failed to read matrix
+        return false;
+    }
+
+    bool readNextNMatrices(std::ifstream &fin, std::vector<EigenType::Matrix6fx3f> &matrices, int N) {
+        std::vector<string> lines;
+
+        readNextNLines(fin, lines, N);
+
+        try {
+            matrices = convertLinesToMatrices6fx3f(lines);
+        }
+        catch(int numElements) {
+            std::cerr << "Incorrect number of elements in Matrix6fx3fReader.\nGot " << numElements << " when expecting 18." << std::endl;
             return false;
         }
 
