@@ -14,6 +14,14 @@ namespace GeneratingVectorsForViruses {
             starting_generators = generatorsOf1044();
             ending_generators = generatorsOf2752();
         }
+        else if (virus_name == "1044-1127") {
+            starting_generators = generatorsOf1044();
+            ending_generators = generatorsOf1127();
+        }
+        else if (virus_name == "1044-1227") {
+            starting_generators = generatorsOf1044();
+            ending_generators = generatorsOf1227();
+        }
     }
 
 
@@ -108,6 +116,38 @@ namespace GeneratingVectorsForViruses {
         EigenType::Vector6f v, w, t;
         v << 0, 1, 0, -1, -1, 0;
         w << 0, 0, 1, 0, 1, 0;
+        t << 1, 0, 0, 0, 0, 0;
+
+        std::vector<EigenType::Vector6f> generators;
+        generators.push_back(v);
+        generators.push_back(w);
+        generators.push_back(t);
+        return generators;
+    }
+
+    std::vector<EigenType::Vector6f> generatorsOf1127() {
+        EigenType::Vector6f v, w, t;
+        v << 1, -1, 1, 1, -1, -1;
+        v *= 0.5;
+
+        w << 1, 1, -1, 1, 1, -1;
+        w *= 0.5;
+
+        t << 3, -1, 1, 1, -1, -1;
+        t *= 0.5;
+
+        std::vector<EigenType::Vector6f> generators;
+        generators.push_back(v);
+        generators.push_back(w);
+        generators.push_back(t);
+        return generators;
+    }
+
+    std::vector<EigenType::Vector6f> generatorsOf1227() {
+        EigenType::Vector6f v, w, t;
+
+        v << 1, 0, 0, 0, 0, 0;
+        w << 1, 1, 0, 0, 0, 1;
         t << 1, 0, 0, 0, 0, 0;
 
         std::vector<EigenType::Vector6f> generators;

@@ -14,6 +14,8 @@ namespace GeneratingVectorsForViruses {
     std::vector<EigenType::Vector6f> endingGeneratorsOfSC_TO_FCC_D10();
     std::vector<EigenType::Vector6f> generatorsOf1044();
     std::vector<EigenType::Vector6f> generatorsOf2752();
+    std::vector<EigenType::Vector6f> generatorsOf1127();
+    std::vector<EigenType::Vector6f> generatorsOf1227();
 } // GeneratingVectorsForViruses
 
 #endif //VIRUS_RESEARCH_GENERATINGVECTORSFORVIRUSES_HPP
