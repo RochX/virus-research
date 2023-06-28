@@ -123,53 +123,91 @@ int main(int argc, char *argv[]) {
     std::cout << "Now checking whether any potential T and B0 pairs exist..." << std::endl;
     count = 0;
     auto start_time = omp_get_wtime();
-    for (const Matrix6f& transition_matrix : possible_transition_matrices) {
+    #pragma omp parallel private(possible_B0_matrices) shared(start_time, starting_point_cloud, ending_point_cloud, starting_orbits, ending_orbits, possible_transition_matrices, std::cout, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT) default(none)
+    {
+        #pragma omp master
+        {
+            int count = 0;
+            for (const Matrix6f &transition_matrix: possible_transition_matrices) {
 //        if (transition_matrix.isApprox(Matrix6f::Identity()) || transition_matrix.isApprox(Matrix6f::Identity()*-1)) {
-        if (MatrixFunctions::matrixIsPlusMinusIdentity(transition_matrix)) {
-            count++;
-            std::cout << count << ":\tPlus minus identity matrix, skipping..." << std::endl;
-            continue;
-        }
+                if (MatrixFunctions::matrixIsPlusMinusIdentity(transition_matrix)) {
+                    count++;
+                    std::cout << count << ":\tPlus minus identity matrix, skipping..." << std::endl;
+                    continue;
+                }
 
-        // skip matrix if determinant is zero
-        if (transition_matrix.determinant() < 0.000001) {
-            count++;
-            continue;
-        }
+                // skip matrix if determinant is zero
+                if (transition_matrix.determinant() < 0.000001) {
+                    count++;
+                    continue;
+                }
 
-        possible_B0_matrices = findPossibleB0Matrices3StartingOrbits(transition_matrix, starting_orbits, starting_point_cloud, ending_point_cloud);
-        count++;
-        if (!possible_B0_matrices.empty()) {
-            std::cout << count << ":\t" << possible_B0_matrices.size() << " done in " << omp_get_wtime()-start_time << " seconds." << std::endl;
 
-            // check if any of the products work
-            for (const EigenType::Matrix6fx3f& curr_b0_matrix : possible_B0_matrices) {
-                if (verifyProductComesFromEndingOrbits(transition_matrix, curr_b0_matrix, ending_orbits, ending_point_cloud)) {
-                    fout << transition_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
-                    fout << curr_b0_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
-                    fout << (transition_matrix * curr_b0_matrix).format(EigenType::COMMA_SEP_VALS) << std::endl;
-                    fout << std::endl;
+                count++;
 
-                    std::cout << "\tT:" << std::endl;
-                    std::cout << transition_matrix.format(EigenType::TAB_INDENT) << std::endl;
-                    std::cout << "\tB0:" << std::endl;
-                    std::cout << curr_b0_matrix.format(EigenType::TAB_INDENT) << std::endl;
-                    std::cout << "\tT*B0:" << std::endl;
-                    std::cout << (transition_matrix * curr_b0_matrix).format(EigenType::TAB_INDENT) << std::endl;
+                #pragma omp task private(possible_B0_matrices) firstprivate(count, transition_matrix) shared(starting_orbits, starting_point_cloud, ending_orbits, ending_point_cloud, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT, std::cout) default(none)
+                {
+                    possible_B0_matrices = findPossibleB0Matrices3StartingOrbits(transition_matrix, starting_orbits,
+                                                                                 starting_point_cloud,
+                                                                                 ending_point_cloud);
+                    if (!possible_B0_matrices.empty()) {
+                        // check if any of the products work
+                        for (const EigenType::Matrix6fx3f &curr_b0_matrix: possible_B0_matrices) {
+                            if (verifyProductComesFromEndingOrbits(transition_matrix, curr_b0_matrix, ending_orbits,
+                                                                   ending_point_cloud)) {
+                                #pragma omp critical
+                                {
+                                    fout << count << std::endl;
+                                    fout << transition_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
+                                    fout << curr_b0_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
+                                    fout << (transition_matrix * curr_b0_matrix).format(EigenType::COMMA_SEP_VALS)
+                                         << std::endl;
+                                    fout << std::endl;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
 
-                    break;
+                if (count % 1000 == 0) {
+                    std::cout << count << ":\tAssigned in " << omp_get_wtime()-start_time << " seconds." << std::endl;
                 }
             }
-
-
         }
-        else if (count % 1000 == 0) {
-            std::cout << count << ":\t" << possible_B0_matrices.size() << " done in " << omp_get_wtime()-start_time << " seconds." << std::endl;
-        }
+
+        #pragma omp taskwait
     }
-    std::cout << "Completely done in " << omp_get_wtime()-start_time << " seconds." << std::endl;
 
     fout.close();
+
+    std::cout << "Getting T and B0 matrices that worked for group " + centralizer_to_check + "...\n";
+    std::ifstream fin (curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + ".txt");
+    Matrix6f transition;
+    Matrix6fx3f b0, prod;
+    std::string count_s, blank;
+
+    while (getline(fin, count_s)) {
+        Matrix6fFileReader::readNextMatrix(fin, transition);
+        Matrix6fx3fFileReader::readNextMatrix(fin, b0);
+        Matrix6fx3fFileReader::readNextMatrix(fin, prod);
+        getline(fin, blank); // read blank line
+
+        MatrixFunctions::fixZeroEntries(b0);
+        MatrixFunctions::fixZeroEntries(prod);
+
+        std::cout << count_s << ":" << std::endl;
+        std::cout << "\tT:" << std::endl;
+        std::cout << transition.format(EigenType::TAB_INDENT) << std::endl;
+        std::cout << "\tB0:" << std::endl;
+        std::cout << b0.format(EigenType::TAB_INDENT) << std::endl;
+        std::cout << "\tT*B0:" << std::endl;
+        std::cout << prod.format(EigenType::TAB_INDENT) << std::endl << std::endl;
+    }
+    std::cout << "Done with file.\n";
+    fin.close();
+
+    std::cout << "Completely done in " << omp_get_wtime()-start_time << " seconds." << std::endl;
 }
 
 
@@ -339,7 +377,6 @@ std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(co
 
     int count = 0;
     auto start_time = omp_get_wtime();
-    std::cout << "Start matrix map into ending point cloud reduction by norm..." << std::endl;
     Vector6f current_Tv_product;
     for (Matrix6f transition_matrix : possible_matrices) {
         for (const Vector6f& starting_vector : starting_point_cloud) {
