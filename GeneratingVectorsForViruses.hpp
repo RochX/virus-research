@@ -6,6 +6,8 @@
 #define VIRUS_RESEARCH_GENERATINGVECTORSFORVIRUSES_HPP
 
 namespace GeneratingVectorsForViruses {
+    void pickVirusType(const std::string& virus_name, std::vector<EigenType::Vector6f>& starting_generators, std::vector<EigenType::Vector6f>& ending_generators);
+
     std::vector<EigenType::Vector6f> startingGeneratorsOfTCV();
     std::vector<EigenType::Vector6f> endingGeneratorsOfTCV();
     std::vector<EigenType::Vector6f> startingGeneratorsOfSC_TO_FCC_D10();

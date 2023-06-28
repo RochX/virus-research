@@ -1,6 +1,22 @@
 #include "GeneratingVectorsForViruses.hpp"
 
 namespace GeneratingVectorsForViruses {
+    void pickVirusType(const std::string& virus_name, std::vector<EigenType::Vector6f>& starting_generators, std::vector<EigenType::Vector6f>& ending_generators) {
+        if (virus_name == "TCV") {
+            starting_generators = startingGeneratorsOfTCV();
+            ending_generators = endingGeneratorsOfTCV();
+        }
+        else if (virus_name == "SC_to_FCC_D10") {
+            starting_generators = startingGeneratorsOfSC_TO_FCC_D10();
+            ending_generators = endingGeneratorsOfSC_TO_FCC_D10();
+        }
+        else if (virus_name == "1044-2752") {
+            starting_generators = generatorsOf1044();
+            ending_generators = generatorsOf2752();
+        }
+    }
+
+
     std::vector<EigenType::Vector6f> startingGeneratorsOfTCV() {
         EigenType::Matrix6f D;
         D << 1,1,-1,-1,1,1,
