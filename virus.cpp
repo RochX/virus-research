@@ -264,8 +264,7 @@ std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPo
         partial_reduced_matrices = reducePossibleMatricesByCheckingMapIntoEndingPointCloud(possible_transition_matrices,
                                                                                            starting_point_cloud,
                                                                                            ending_point_cloud);
-
-        std_vector_functions::append_vector<Matrix6f>(reduced_matrices_first_four_vars, partial_reduced_matrices, true);
+        std_vector_functions::append_vector<Matrix6f>(reduced_matrices_first_four_vars, partial_reduced_matrices, false);
 
         count++;
         std::cout << "D10 checked " << count * possible_entries.size() * possible_entries.size() * possible_entries.size()
@@ -318,7 +317,7 @@ std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPoi
                                                                                            starting_point_cloud,
                                                                                            ending_point_cloud);
 
-        std_vector_functions::append_vector<Matrix6f>(reduced_matrices_first_four_vars, partial_reduced_matrices, true);
+        std_vector_functions::append_vector<Matrix6f>(reduced_matrices_first_four_vars, partial_reduced_matrices, false);
 
         count++;
         std::cout << "First half D6 checked " << count * possible_entries.size() * possible_entries.size() * possible_entries.size()
@@ -346,7 +345,7 @@ std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPoi
                                                                                            starting_point_cloud,
                                                                                            ending_point_cloud);
 
-        std_vector_functions::append_vector<Matrix6f>(reduced_matrices_last_four_vars, partial_reduced_matrices, true);
+        std_vector_functions::append_vector<Matrix6f>(reduced_matrices_last_four_vars, partial_reduced_matrices, false);
 
         count++;
         std::cout << "Second half D6 checked " << count * possible_entries.size() * possible_entries.size() * possible_entries.size()
