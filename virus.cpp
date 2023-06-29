@@ -12,6 +12,7 @@
 #include "IcosahedralGroup.hpp"
 #include "Matrix6fFileReader.hpp"
 #include "MatrixFunctions.hpp"
+#include "outputResults.hpp"
 #include "PermutationGroup.hpp"
 #include "TetrahedralGroup.hpp"
 #include "std_vector_functions.hpp"
@@ -49,6 +50,8 @@ int main(int argc, char *argv[]) {
     std::vector<Vector6f> starting_generators, ending_generators;
     std::string current_virus;
     std::string centralizer_to_check;
+    std::string line;
+    int b0_cols;
 
     bool get_user_input = true;
     if (get_user_input) {
@@ -56,6 +59,9 @@ int main(int argc, char *argv[]) {
         std::getline(std::cin, current_virus);
         std::cout << "Enter which centralizer to check (ICO, A_4, D_6, D_10):\n"; // <-- this is one of: "ICO", "A_4", "D_6", or "D_10"
         std::getline(std::cin, centralizer_to_check);
+        std::cout << "Enter how many columns the B0 matrices will be made with (3 or 6): \n";
+        std::getline(std::cin, line);
+        b0_cols = std::stoi(line);
     }
     else {
         current_virus = "1044-1127";
@@ -132,12 +138,16 @@ int main(int argc, char *argv[]) {
     std::cout << "Number of candidate transition matrices: " << possible_transition_matrices.size() << std::endl << std::endl;
 
     std::ofstream fout (curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + ".txt");
-    std::vector<Matrix6fx3f> possible_B0_matrices;
-    Matrix6f b0_matrix;
+    // for 3 column B0s
+    std::vector<Matrix6fx3f> possible_B0_matrices_3_col;
+
+    // for 6 column B0s
+    std::vector<Matrix6f> possible_B0_matrices_6_col;
+
     std::cout << "Now checking whether any potential T and B0 pairs exist..." << std::endl;
     count = 0;
     auto start_time = omp_get_wtime();
-    #pragma omp parallel private(possible_B0_matrices) shared(start_time, starting_point_cloud, ending_point_cloud, starting_orbits, ending_orbits, possible_transition_matrices, std::cout, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT) default(none)
+    #pragma omp parallel private(possible_B0_matrices_3_col, possible_B0_matrices_6_col) shared(b0_cols, start_time, starting_point_cloud, ending_point_cloud, starting_orbits, ending_orbits, possible_transition_matrices, std::cout, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT) default(none)
     {
         #pragma omp master
         {
@@ -158,31 +168,58 @@ int main(int argc, char *argv[]) {
 
 
                 count++;
-
-                #pragma omp task private(possible_B0_matrices) firstprivate(count, transition_matrix) shared(starting_orbits, starting_point_cloud, ending_orbits, ending_point_cloud, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT, std::cout) default(none)
-                {
-                    possible_B0_matrices = findPossibleB0Matrices3StartingOrbits(transition_matrix, starting_orbits,
-                                                                                 starting_point_cloud,
-                                                                                 ending_point_cloud);
-                    if (!possible_B0_matrices.empty()) {
-                        // check if any of the products work
-                        for (const EigenType::Matrix6fx3f &curr_b0_matrix: possible_B0_matrices) {
-                            if (verifyProductComesFromEndingOrbits(transition_matrix, curr_b0_matrix, ending_orbits,
-                                                                   ending_point_cloud)) {
-                                #pragma omp critical
-                                {
-                                    fout << count << std::endl;
-                                    fout << transition_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
-                                    fout << curr_b0_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
-                                    fout << (transition_matrix * curr_b0_matrix).format(EigenType::COMMA_SEP_VALS)
-                                         << std::endl;
-                                    fout << std::endl;
+                if (b0_cols == 6) {
+                    #pragma omp task private(possible_B0_matrices_6_col) firstprivate(count, transition_matrix) shared(starting_orbits, starting_point_cloud, ending_orbits, ending_point_cloud, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT, std::cout) default(none)
+                    {
+                        possible_B0_matrices_6_col = findPossibleB0Matrices(transition_matrix, starting_orbits,
+                                                                            starting_point_cloud,
+                                                                            ending_point_cloud);
+                        if (!possible_B0_matrices_6_col.empty()) {
+                            // check if any of the products work
+                            for (const EigenType::Matrix6f &curr_b0_matrix: possible_B0_matrices_6_col) {
+                                if (verifyProductComesFromEndingOrbits(transition_matrix, curr_b0_matrix, ending_orbits,
+                                                                       ending_point_cloud)) {
+                                    #pragma omp critical
+                                    {
+                                        fout << count << std::endl;
+                                        fout << transition_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
+                                        fout << curr_b0_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
+                                        fout << (transition_matrix * curr_b0_matrix).format(EigenType::COMMA_SEP_VALS)
+                                             << std::endl;
+                                        fout << std::endl;
+                                    }
+                                    break;
                                 }
-                                break;
                             }
                         }
                     }
-                }
+                } // endif (b0_cols == 6)
+                else if (b0_cols == 3) {
+                    #pragma omp task private(possible_B0_matrices_3_col) firstprivate(count, transition_matrix) shared(starting_orbits, starting_point_cloud, ending_orbits, ending_point_cloud, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT, std::cout) default(none)
+                    {
+                        possible_B0_matrices_3_col = findPossibleB0Matrices3StartingOrbits(transition_matrix, starting_orbits,
+                                                                            starting_point_cloud,
+                                                                            ending_point_cloud);
+                        if (!possible_B0_matrices_3_col.empty()) {
+                            // check if any of the products work
+                            for (const EigenType::Matrix6fx3f &curr_b0_matrix: possible_B0_matrices_3_col) {
+                                if (verifyProductComesFromEndingOrbits(transition_matrix, curr_b0_matrix, ending_orbits,
+                                                                       ending_point_cloud)) {
+                                    #pragma omp critical
+                                    {
+                                        fout << count << std::endl;
+                                        fout << transition_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
+                                        fout << curr_b0_matrix.format(EigenType::COMMA_SEP_VALS) << std::endl;
+                                        fout << (transition_matrix * curr_b0_matrix).format(EigenType::COMMA_SEP_VALS)
+                                             << std::endl;
+                                        fout << std::endl;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } // endif (b0_cols == 3)
 
                 if (count % 1000 == 0) {
                     std::cout << count << ":\tAssigned in " << omp_get_wtime()-start_time << " seconds." << std::endl;
@@ -197,26 +234,15 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Getting T and B0 matrices that worked for group " + centralizer_to_check + "...\n";
     std::ifstream fin (curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + ".txt");
-    Matrix6f transition;
-    Matrix6fx3f b0, prod;
-    std::string count_s, blank;
-
-    while (getline(fin, count_s)) {
-        Matrix6fFileReader::readNextMatrix(fin, transition);
-        Matrix6fx3fFileReader::readNextMatrix(fin, b0);
-        Matrix6fx3fFileReader::readNextMatrix(fin, prod);
-        getline(fin, blank); // read blank line
-
-        MatrixFunctions::fixZeroEntries(b0);
-        MatrixFunctions::fixZeroEntries(prod);
-
-        std::cout << count_s << ":" << std::endl;
-        std::cout << "\tT:" << std::endl;
-        std::cout << transition.format(EigenType::TAB_INDENT) << std::endl;
-        std::cout << "\tB0:" << std::endl;
-        std::cout << b0.format(EigenType::TAB_INDENT) << std::endl;
-        std::cout << "\tT*B0:" << std::endl;
-        std::cout << prod.format(EigenType::TAB_INDENT) << std::endl << std::endl;
+    switch (b0_cols) {
+        case 3:
+            outputResults::output3colB0(fin);
+            break;
+        case 6:
+            outputResults::output6colB0(fin);
+            break;
+        default:
+            std::cout << "Invalid B0 column input." << std::endl;
     }
     std::cout << "Done with file.\n";
     fin.close();
