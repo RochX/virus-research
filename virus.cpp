@@ -45,17 +45,31 @@ int main(int argc, char *argv[]) {
             curr_directory = curr_directory + "/";
         }
     }
-    IcosahedralGroup icosahedral_group;
 
     std::vector<Vector6f> starting_generators, ending_generators;
+    std::string current_virus;
+    std::string centralizer_to_check;
 
-    // eventually these should come from some sort of user input...
-    std::string current_virus = "1044-2752";
-    std::string centralizer_to_check = "D_10";     // <-- this is one of: "ICO", "A_4", "D_6", or "D_10"
+    bool get_user_input = true;
+    if (get_user_input) {
+        std::cout << "Enter which virus to work on:\n";
+        std::getline(std::cin, current_virus);
+        std::cout << "Enter which centralizer to check (ICO, A_4, D_6, D_10):\n"; // <-- this is one of: "ICO", "A_4", "D_6", or "D_10"
+        std::getline(std::cin, centralizer_to_check);
+    }
+    else {
+        current_virus = "1044-1127";
+        centralizer_to_check = "D_10";
+    }
     GeneratingVectorsForViruses::pickVirusType(current_virus, starting_generators, ending_generators);
+    if (starting_generators.empty() || ending_generators.empty()) {
+        std::cout << "Virus inputted is either invalid or not implemented, aborting..." << std::endl;
+        return 0;
+    }
     assert(!starting_generators.empty());
     assert(!ending_generators.empty());
 
+    IcosahedralGroup icosahedral_group;
     std::vector<std::vector<Vector6f>> starting_orbits, ending_orbits;
     std::vector<Vector6f> starting_point_cloud, ending_point_cloud;
 
