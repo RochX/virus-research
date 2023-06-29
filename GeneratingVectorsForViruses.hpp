@@ -8,8 +8,26 @@
 namespace GeneratingVectorsForViruses {
     void pickVirusType(const std::string& virus_name, std::vector<EigenType::Vector6f>& starting_generators, std::vector<EigenType::Vector6f>& ending_generators);
 
-    std::vector<EigenType::Vector6f> startingGeneratorsOfTCV();
-    std::vector<EigenType::Vector6f> endingGeneratorsOfTCV();
+    std::vector<EigenType::Vector6f> generatorsOfPhiX174Native();
+    std::vector<EigenType::Vector6f> generatorsOfPhiX174Mature();
+    std::vector<EigenType::Vector6f> generatorsOfCCMVNative();
+    std::vector<EigenType::Vector6f> generatorsOfCCMVMature();
+    std::vector<EigenType::Vector6f> generatorsOfTCVNative();
+    std::vector<EigenType::Vector6f> generatorsOfTCVMature();
+    std::vector<EigenType::Vector6f> generatorsOfHK97Native();
+    std::vector<EigenType::Vector6f> generatorsOfHK97Mature();
+
+    // TODO: implement these
+    std::vector<EigenType::Vector6f> generatorsOfCVA10Native();
+    std::vector<EigenType::Vector6f> generatorsOfCVA10Mature();
+    std::vector<EigenType::Vector6f> generatorsOfCVA10Aparticle();
+    std::vector<EigenType::Vector6f> generatorsOfD68Native();
+    std::vector<EigenType::Vector6f> generatorsOfD68Mature();
+    std::vector<EigenType::Vector6f> generatorsOfD68Aparticle();
+    std::vector<EigenType::Vector6f> generatorsOfHE71Native();
+    std::vector<EigenType::Vector6f> generatorsOfHE71Mature();
+    std::vector<EigenType::Vector6f> generatorsOfHE71Aparticle();
+
     std::vector<EigenType::Vector6f> startingGeneratorsOfSC_TO_FCC_D10();
     std::vector<EigenType::Vector6f> endingGeneratorsOfSC_TO_FCC_D10();
     std::vector<EigenType::Vector6f> generatorsOf1044();
