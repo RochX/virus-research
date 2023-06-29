@@ -325,12 +325,16 @@ std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPo
             possible_transition_matrices, starting_point_cloud, ending_point_cloud);
 
     // combine the two lists, hopefully the reduction did enough so this nested loop doesn't take long
+    std::cout << "Merging D_10 lists together..." << std::endl;
     possible_transition_matrices.clear();
     for (const Matrix6f& m1 : reduced_matrices_first_four_vars) {
         for (const Matrix6f& m2 : reduced_matrices_last_two_vars) {
-            possible_transition_matrices.emplace_back(m1+m2);
+            // only consider matrices that have nonzero determinant
+            if (std::fabs((m1+m2).determinant()) >= 0.00001)
+                possible_transition_matrices.emplace_back(m1+m2);
         }
     }
+    std::cout << "Done with merging." << std::endl;
 
     return possible_transition_matrices;
 }
@@ -395,12 +399,16 @@ std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPoi
     }
 
     // combine the two lists, hopefully the reduction did enough so this nested loop doesn't take long
+    std::cout << "Merging D_6 lists together..." << std::endl;
     possible_transition_matrices.clear();
     for (const Matrix6f& m1 : reduced_matrices_first_four_vars) {
         for (const Matrix6f& m2 : reduced_matrices_last_four_vars) {
-            possible_transition_matrices.emplace_back(m1+m2);
+            // only consider matrices that have nonzero determinant
+            if (std::fabs((m1+m2).determinant()) >= 0.00001)
+                possible_transition_matrices.emplace_back(m1+m2);
         }
     }
+    std::cout << "Done with merging." << std::endl;
 
     return possible_transition_matrices;
 }
