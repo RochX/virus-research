@@ -11,6 +11,7 @@
 namespace outputResults {
     void output3colB0(std::ifstream& fin);
     void output6colB0(std::ifstream& fin);
+    void outputXcolB0(std::ifstream& fin, int num_cols);
 }
 
 #endif //VIRUS_RESEARCH_OUTPUTRESULTS_HPP
