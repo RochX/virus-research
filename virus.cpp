@@ -27,6 +27,7 @@ std::vector<float> possibleTransitionMatrixEntriesHardCoded(float lower_bound = 
 std::vector<Matrix6f> possibleTransitionMatricesInICO(const std::vector<float>& possible_entries);
 std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
 std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
+std::vector<Matrix6f> possibleTransitionMatricesInA4WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
 std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(const std::vector<Matrix6f>& possible_matrices, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
 
 std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f &transition_matrix, const std::vector<std::vector<Vector6f>> &starting_orbits,
@@ -144,6 +145,10 @@ int main(int argc, char *argv[]) {
                 possible_transition_matrices,
                 starting_point_cloud,
                 ending_point_cloud);
+    }
+    else if (centralizer_to_check == "A_4") {
+        possible_transition_matrices = possibleTransitionMatricesInA4WithCheckingMapIntoEndingPointCloud(
+                possible_transition_matrix_entries, starting_point_cloud, ending_point_cloud);
     }
     else if (centralizer_to_check == "D_6") {
         possible_transition_matrices = possibleTransitionMatricesInD6WithCheckingMapIntoEndingPointCloud(
@@ -273,6 +278,38 @@ std::vector<Matrix6f> possibleTransitionMatricesInICO(const std::vector<float>& 
     }
 
     return T_matrices_in_ICO;
+}
+
+std::vector<Matrix6f> possibleTransitionMatricesInA4WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud) {
+    std::vector<Matrix6f> possible_transition_matrices;
+    // x, y, z, t
+    auto start_time = omp_get_wtime();
+    std::vector<Matrix6f> partial_reduced_matrices;
+    int count = 0;
+    Matrix6f possible;
+    for (float x : possible_entries) {
+        for (float y: possible_entries) {
+            for (float z: possible_entries) {
+                for (float t: possible_entries) {
+                    possible_transition_matrices.push_back(
+                            TetrahedralGroup::matrixFormOfCentralizer(x, y, z, t));
+                }
+            }
+        }
+
+        partial_reduced_matrices = reducePossibleMatricesByCheckingMapIntoEndingPointCloud(possible_transition_matrices,
+                                                                                           starting_point_cloud,
+                                                                                           ending_point_cloud);
+        std_vector_functions::append_vector<Matrix6f>(possible_transition_matrices, partial_reduced_matrices, true);
+
+        count++;
+        std::cout << "A4 checked " << count * possible_entries.size() * possible_entries.size() * possible_entries.size()
+                  << " out of " << possible_entries.size() * possible_entries.size() * possible_entries.size() *
+                                   possible_entries.size() << " in " << omp_get_wtime() - start_time << " seconds."
+                  << std::endl;
+    }
+
+    return possible_transition_matrices;
 }
 
 std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud) {
