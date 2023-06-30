@@ -63,16 +63,16 @@ int main(int argc, char *argv[]) {
     std::cout << "The current virus has " << starting_generators.size() << " starting generators and "
               << ending_generators.size() << " ending generators.\n";
     std::cout << "Enter how many columns the B0 matrices will be made with:\n";
-    std::cout << "(for good results, use something between of the max of the two above numbers and 6, inclusive)\n";
+    std::cout << "(for good results, use something between " << std::max(starting_generators.size(), ending_generators.size()) <<" and 6, inclusive)\n";
     std::getline(std::cin, line);
     b0_cols = std::stoi(line);
     if (starting_generators.size() != ending_generators.size()) {
-        std::cout << "Unequal number of starting and ending generators, swap the start and end generators?";
-        std::cout << "It is ideal to have the larger number of generators as the start for the program to run faster.\n";
+        std::cout << "Unequal number of starting and ending generators, swap the start and end generators?\n";
+        std::cout << "Swapping when there are more ending generators than starting generators usually leads to faster runtime.\n";
         std::cout << "(Y/N):\t";
         std::getline(std::cin, line);
         if (line == "Y" || line == "y") {
-            std::cout << "Swapping, note that you will need to take the inverse of any transition this program finds."
+            std::cout << "Swapping, note that you will now need to take the inverse of any transition this program finds."
                       << std::endl;
             starting_generators.swap(ending_generators);
         }
