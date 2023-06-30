@@ -106,14 +106,36 @@ int main(int argc, char *argv[]) {
     FileOutputMatricesWithColumnsFromEachOrbit(ending_orbits, b1_filename);
     */
 
-    // get all the possible ending entries
-    std::vector<float> valid_ending_entries;
-    for (const Vector6f& v : ending_point_cloud) {
-        std::vector<float> v_entries = MatrixFunctions::entriesOfMatrix(v);
-        std_vector_functions::append_vector<float>(valid_ending_entries, v_entries, true);
+    // TODO: add more versatile user input, for now this is fine
+    std::vector<float> possible_transition_matrix_entries = possibleTransitionMatrixEntriesHardCoded(-5, 5);
+    std::vector<std::vector<float>> example_entry_lists {{-1, 0, 1},
+                                                         {-1, -0.5, 0, 0.5, 1},
+                                                         {-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2},
+                                                         {-3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3},
+                                                         possibleTransitionMatrixEntriesHardCoded(-1, 1),
+                                                         possibleTransitionMatrixEntriesHardCoded(-2, 2),
+                                                         possibleTransitionMatrixEntriesHardCoded(-3, 3)};
+    std::cout << "Which entry list for transition matrices to use? Here are the lists:\n";
+    for (int i = 0; i < example_entry_lists.size(); i++) {
+        std::cout << "List " << i << ":\t";
+        for (float f : example_entry_lists[i]) {
+            std::cout << f;
+            if (f != example_entry_lists[i].back())
+                std::cout << ", ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "Now pick one of the above lists:\n";
+    getline(std::cin, line);
+    int user_list_pick = std::stoi(line);
+    if (0 <= user_list_pick && user_list_pick < example_entry_lists.size()) {
+        possible_transition_matrix_entries = example_entry_lists[user_list_pick];
+    }
+    else {
+        std::cout << "Invalid list picked, aborting...\n";
+        return 0;
     }
 
-    std::vector<float> possible_transition_matrix_entries = possibleTransitionMatrixEntriesHardCoded();
     std::vector<Matrix6f> possible_transition_matrices;
 
     if (centralizer_to_check == "ICO") {
