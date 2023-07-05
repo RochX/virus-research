@@ -35,9 +35,15 @@ namespace MatrixFunctions {
         for (size_t i = 0; i < m.size(); i++) {
             curr = *(m.data()+i);
             if (remove_duplicates) {
-                if (std::find(entries.begin(), entries.end(), curr) == entries.end()) {
+                bool found = [&] {
+                    for (float f : entries) {
+                        if (FloatsAreApproxEqual(curr, f))
+                            return true;
+                    }
+                    return false;
+                }();
+                if (!found)
                     entries.push_back(curr);
-                }
             }
             else
                 entries.push_back(curr);
