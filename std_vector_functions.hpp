@@ -10,6 +10,7 @@
 namespace std_vector_functions {
     template <typename T>
     void append_vector(std::vector<T>& v1, std::vector<T>& v2, bool removeDups);
+    void append_vector(std::vector<float> &v1, std::vector<float> &v2, bool removeDups);
 
     template <typename T>
     void push_backIfNotInVector(std::vector<T> &vector, T element, T epsilon = 0);
