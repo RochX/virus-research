@@ -116,7 +116,7 @@ namespace GeneratingVectorsForViruses {
             starting_generators = generatorsOfHK97Native();
             ending_generators = generatorsOfHK97Mature();
         }
-        else if (virus_name == "SC_to_FCC_D10") {
+        else if (virus_name == "SC_FCC_D10") {
             starting_generators = startingGeneratorsOfSC_TO_FCC_D10();
             ending_generators = endingGeneratorsOfSC_TO_FCC_D10();
         }
@@ -158,6 +158,7 @@ namespace GeneratingVectorsForViruses {
 
     std::vector<EigenType::Vector6f> startingGeneratorsOfSC_TO_FCC_D10() {
         std::vector<EigenType::Vector6f> generators;
+        generators.push_back(s);
         generators.push_back(s);
         return generators;
     }
