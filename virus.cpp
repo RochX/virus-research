@@ -25,10 +25,22 @@ using namespace EigenType;
 
 std::vector<float> possibleTransitionMatrixEntriesHardCoded(float lower_bound = -10, float upper_bound = 10);
 std::vector<Matrix6f> possibleTransitionMatricesInICO(const std::vector<float>& possible_entries);
-std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
-std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
-std::vector<Matrix6f> possibleTransitionMatricesInA4WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
+std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPointCloud(const std::vector<float> &possible_entries,
+                                                                   const std::vector<std::vector<Vector6f>> &starting_orbits,
+                                                                   const std::vector<Vector6f> &starting_point_cloud,
+                                                                   const std::vector<Vector6f> &ending_point_cloud);
+std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPointCloud(const std::vector<float> &possible_entries,
+                                                                  const std::vector<std::vector<Vector6f>> &starting_orbits,
+                                                                  const std::vector<Vector6f> &starting_point_cloud,
+                                                                  const std::vector<Vector6f> &ending_point_cloud);
+std::vector<Matrix6f> possibleTransitionMatricesInA4WithCheckingMapIntoEndingPointCloud(const std::vector<float> &possible_entries,
+                                                                  const std::vector<std::vector<Vector6f>> &starting_orbits,
+                                                                  const std::vector<Vector6f> &starting_point_cloud,
+                                                                  const std::vector<Vector6f> &ending_point_cloud);
+// TODO: add user input to choose which one of these to use (i.e. full check or partial check)
+// for now use the full check
 std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(const std::vector<Matrix6f>& possible_matrices, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud);
+std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(const std::vector<Matrix6f>& possible_matrices, const std::vector<std::vector<Vector6f>>& starting_orbits, const std::vector<Vector6f>& ending_point_cloud);
 
 std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f &transition_matrix, const std::vector<std::vector<Vector6f>> &starting_orbits,
                        const std::vector<Vector6f> &starting_point_cloud,
@@ -137,6 +149,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
+    auto program_start_time = omp_get_wtime();
     std::vector<Matrix6f> possible_transition_matrices;
 
     if (centralizer_to_check == "ICO") {
@@ -148,15 +161,15 @@ int main(int argc, char *argv[]) {
     }
     else if (centralizer_to_check == "A_4") {
         possible_transition_matrices = possibleTransitionMatricesInA4WithCheckingMapIntoEndingPointCloud(
-                possible_transition_matrix_entries, starting_point_cloud, ending_point_cloud);
+                possible_transition_matrix_entries, starting_orbits, starting_point_cloud, ending_point_cloud);
     }
     else if (centralizer_to_check == "D_6") {
         possible_transition_matrices = possibleTransitionMatricesInD6WithCheckingMapIntoEndingPointCloud(
-                possible_transition_matrix_entries, starting_point_cloud, ending_point_cloud);
+                possible_transition_matrix_entries, starting_orbits, starting_point_cloud, ending_point_cloud);
     }
     else if (centralizer_to_check == "D_10") {
         possible_transition_matrices = possibleTransitionMatricesInD10WithCheckingMapIntoEndingPointCloud(
-                possible_transition_matrix_entries, starting_point_cloud, ending_point_cloud);
+                possible_transition_matrix_entries, starting_orbits, starting_point_cloud, ending_point_cloud);
     }
     else {
         std::cout << "Centralizer to check is of a group not implemented, aborting..." << std::endl;
@@ -244,7 +257,7 @@ int main(int argc, char *argv[]) {
     fin.close();
     std::cout << "Done with file.\n";
 
-    std::cout << "Completely done in " << omp_get_wtime()-start_time << " seconds." << std::endl;
+    std::cout << "Completely done in " << omp_get_wtime()-program_start_time << " seconds." << std::endl;
 }
 
 
@@ -280,7 +293,10 @@ std::vector<Matrix6f> possibleTransitionMatricesInICO(const std::vector<float>& 
     return T_matrices_in_ICO;
 }
 
-std::vector<Matrix6f> possibleTransitionMatricesInA4WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud) {
+std::vector<Matrix6f> possibleTransitionMatricesInA4WithCheckingMapIntoEndingPointCloud(const std::vector<float> &possible_entries,
+                                                                  const std::vector<std::vector<Vector6f>> &starting_orbits,
+                                                                  const std::vector<Vector6f> &starting_point_cloud,
+                                                                  const std::vector<Vector6f> &ending_point_cloud) {
     std::vector<Matrix6f> possible_transition_matrices;
     // x, y, z, t
     auto start_time = omp_get_wtime();
@@ -298,7 +314,7 @@ std::vector<Matrix6f> possibleTransitionMatricesInA4WithCheckingMapIntoEndingPoi
         }
 
         partial_reduced_matrices = reducePossibleMatricesByCheckingMapIntoEndingPointCloud(possible_transition_matrices,
-                                                                                           starting_point_cloud,
+                                                                                           starting_orbits,
                                                                                            ending_point_cloud);
         std_vector_functions::append_vector<Matrix6f>(possible_transition_matrices, partial_reduced_matrices, true);
 
@@ -312,7 +328,10 @@ std::vector<Matrix6f> possibleTransitionMatricesInA4WithCheckingMapIntoEndingPoi
     return possible_transition_matrices;
 }
 
-std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud) {
+std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPointCloud(const std::vector<float> &possible_entries,
+                                                                   const std::vector<std::vector<Vector6f>> &starting_orbits,
+                                                                   const std::vector<Vector6f> &starting_point_cloud,
+                                                                   const std::vector<Vector6f> &ending_point_cloud) {
     std::vector<Matrix6f> possible_transition_matrices;
     // x, y, z, t
     auto start_time = omp_get_wtime();
@@ -331,7 +350,7 @@ std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPo
         }
 
         partial_reduced_matrices = reducePossibleMatricesByCheckingMapIntoEndingPointCloud(possible_transition_matrices,
-                                                                                           starting_point_cloud,
+                                                                                           starting_orbits,
                                                                                            ending_point_cloud);
         std_vector_functions::append_vector<Matrix6f>(reduced_matrices_first_four_vars, partial_reduced_matrices, false);
 
@@ -351,7 +370,7 @@ std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPo
         }
     }
     reduced_matrices_last_two_vars = reducePossibleMatricesByCheckingMapIntoEndingPointCloud(
-            possible_transition_matrices, starting_point_cloud, ending_point_cloud);
+            possible_transition_matrices, starting_orbits, ending_point_cloud);
 
     // combine the two lists, hopefully the reduction did enough so this nested loop doesn't take long
     std::cout << "Merging D_10 lists together..." << std::endl;
@@ -368,7 +387,10 @@ std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPo
     return possible_transition_matrices;
 }
 
-std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPointCloud(const std::vector<float>& possible_entries, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud) {
+std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPointCloud(const std::vector<float> &possible_entries,
+                                                                  const std::vector<std::vector<Vector6f>> &starting_orbits,
+                                                                  const std::vector<Vector6f> &starting_point_cloud,
+                                                                  const std::vector<Vector6f> &ending_point_cloud) {
     std::vector<Matrix6f> possible_transition_matrices;
     // x, u, w, s
     auto start_time = omp_get_wtime();
@@ -387,7 +409,7 @@ std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPoi
         }
 
         partial_reduced_matrices = reducePossibleMatricesByCheckingMapIntoEndingPointCloud(possible_transition_matrices,
-                                                                                           starting_point_cloud,
+                                                                                           starting_orbits,
                                                                                            ending_point_cloud);
 
         std_vector_functions::append_vector<Matrix6f>(reduced_matrices_first_four_vars, partial_reduced_matrices, false);
@@ -415,7 +437,7 @@ std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPoi
         }
 
         partial_reduced_matrices = reducePossibleMatricesByCheckingMapIntoEndingPointCloud(possible_transition_matrices,
-                                                                                           starting_point_cloud,
+                                                                                           starting_orbits,
                                                                                            ending_point_cloud);
 
         std_vector_functions::append_vector<Matrix6f>(reduced_matrices_last_four_vars, partial_reduced_matrices, false);
@@ -445,11 +467,15 @@ std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPoi
 std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(const std::vector<Matrix6f>& possible_matrices, const std::vector<Vector6f>& starting_point_cloud, const std::vector<Vector6f>& ending_point_cloud) {
     std::vector<Matrix6f> reduced_matrices;
     float max_norm_of_ending_point_cloud = 0;
+    std::vector<float> ending_entries;
 
-    // find max norm of ending point cloud
+    // find max norm of ending point cloud and ending entries
     for (const Vector6f& v : ending_point_cloud) {
         max_norm_of_ending_point_cloud = std::max(max_norm_of_ending_point_cloud, v.norm());
+        std::vector<float> curr_entries = MatrixFunctions::entriesOfMatrix(v);
+        std_vector_functions::append_vector(ending_entries, curr_entries, true);
     }
+    std_vector_functions::push_backIfNotInVector<float>(ending_entries, 0, 0.0001);
 
     int count = 0;
     auto start_time = omp_get_wtime();
@@ -461,10 +487,65 @@ std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(co
             if (current_Tv_product.norm() > max_norm_of_ending_point_cloud)
                 continue;
 
-            // add to list, no need to check for duplicates because we get each unique tuple of variables.
+            // check if the entries are correct
+            if (MatrixFunctions::entriesOfMatrixAreOfParticularValues(current_Tv_product, ending_entries)) {
+                // add to list, no need to check for duplicates because we get each unique tuple of variables.
+                MatrixFunctions::fixZeroEntries(transition_matrix);
+                reduced_matrices.push_back(transition_matrix);
+                break;
+            }
+        }
+    }
+
+    return reduced_matrices;
+}
+
+std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(const std::vector<Matrix6f>& possible_matrices, const std::vector<std::vector<Vector6f>>& starting_orbits, const std::vector<Vector6f>& ending_point_cloud) {
+    std::vector<Matrix6f> reduced_matrices;
+    float max_norm_of_ending_point_cloud = 0;
+
+    // find max norm of ending point cloud
+    for (const Vector6f& v : ending_point_cloud) {
+        max_norm_of_ending_point_cloud = std::max(max_norm_of_ending_point_cloud, v.norm());
+    }
+
+    int orbits_that_might_work;
+    auto start_time = omp_get_wtime();
+    Vector6f current_Tv_product;
+    for (Matrix6f transition_matrix : possible_matrices) {
+        orbits_that_might_work = 0;
+        for (const std::vector<Vector6f>& orbit : starting_orbits) {
+            bool orbits_maps_into_ending_point_cloud = [&] {
+                // start lambda function
+                for (const Vector6f &starting_vector: orbit) {
+                    // eliminate based on norm...
+                    if ((transition_matrix * starting_vector).norm() > max_norm_of_ending_point_cloud) {
+                        continue;
+                    }
+
+                    for (Vector6f ending_vector: ending_point_cloud) {
+                        // if transition matrix has a zero row, zero out that entry of this particular vector
+                        for (int i = 0; i < transition_matrix.rows(); i++) {
+                            // row is (approx) zero row
+                            if (transition_matrix.row(i).norm() < 0.00001) {
+                                ending_vector[i] = 0;
+                            }
+                        }
+
+                        if ((transition_matrix * starting_vector).isApprox(ending_vector)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }(); // end lambda function
+            if (orbits_maps_into_ending_point_cloud)
+                orbits_that_might_work++;
+        }
+        // check if something from each orbit could map into the ending point cloud
+        if (orbits_that_might_work == starting_orbits.size()) {
             MatrixFunctions::fixZeroEntries(transition_matrix);
             reduced_matrices.push_back(transition_matrix);
-            break;
         }
     }
 
