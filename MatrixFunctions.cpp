@@ -8,9 +8,9 @@ namespace {
     }
 
     bool FloatsAreApproxEqual(float x, float y) {
-        if (x < 0.00001)
+        if (std::fabs(x) < 0.00001)
             return FloatIsApproxZero(y);
-        if (y < 0.00001)
+        if (std::fabs(y) < 0.00001)
             return FloatIsApproxZero(x);
 
         const float relative_difference_factor = 0.0001;    // 0.01%
