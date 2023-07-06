@@ -271,6 +271,17 @@ int main(int argc, char *argv[]) {
     std::cout << "Done with file.\n";
 
     std::cout << "Completely done in " << omp_get_wtime()-program_start_time << " seconds." << std::endl;
+    std::cout << "Summary:\n";
+    std::cout << "\tVirus:\t" << current_virus << std::endl;
+    std::cout << "\tCentralizer:\t" << centralizer_to_check << std::endl;
+    std::cout << "\tCheck translation to translation:\t" << (check_translation_map ? "Yes" : "No") << std::endl;
+    std::cout << "\tEntry list:\t";
+    for (float e : possible_transition_matrix_entries) {
+        std::cout << e;
+        if (e != possible_transition_matrix_entries.back())
+            std::cout << ", ";
+    }
+    std::cout << std::endl;
 }
 
 
