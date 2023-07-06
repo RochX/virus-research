@@ -48,7 +48,11 @@ std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f &transition_matrix, 
 std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f &transition_matrix, const std::vector<std::vector<Vector6f>> &starting_orbits,
                                              const std::vector<Vector6f> &starting_point_cloud,
                                              const std::vector<Vector6f> &ending_point_cloud, int num_cols);
-bool verifyProductComesFromEndingOrbits(const Matrix6f& transition_matrix, const Eigen::MatrixXf& b0_matrix, const std::vector<std::vector<Vector6f>>& ending_orbits, const std::vector<Vector6f>& ending_point_cloud, int num_cols = -1);
+bool verifyProductComesFromEndingOrbits(const Matrix6f &transition_matrix, const Eigen::MatrixXf &b0_matrix,
+                                        const std::vector<std::vector<Vector6f>> &starting_orbits,
+                                        const std::vector<std::vector<Vector6f>> &ending_orbits,
+                                        const std::vector<Vector6f> &ending_point_cloud, bool check_translation_map,
+                                        int num_cols = -1);
 
 int main(int argc, char *argv[]) {
     std::string curr_directory;
@@ -65,6 +69,7 @@ int main(int argc, char *argv[]) {
     std::string centralizer_to_check;
     std::string line;
     int b0_cols;
+    bool check_translation_map = false;
 
     std::cout << "Enter which virus to work on:\n";
     std::getline(std::cin, current_virus);
@@ -73,6 +78,13 @@ int main(int argc, char *argv[]) {
             << "Enter which centralizer to check (ICO, A_4, D_6, D_10):\n";// <-- this is one of: "ICO", "A_4", "D_6", or "D_10"
     GeneratingVectorsForViruses::pickVirusType(current_virus, starting_generators, ending_generators);
     std::getline(std::cin, centralizer_to_check);
+
+    std::cout << "Require that the translation vectors map to each other?\n(Y/N):";
+    std::getline(std::cin, line);
+    if (line == "Y" || line == "y") {
+        check_translation_map = true;
+    }
+
     std::cout << "The current virus has " << starting_generators.size() << " starting generators and "
               << ending_generators.size() << " ending generators.\n";
     std::cout << "Enter how many columns the B0 matrices will be made with:\n";
@@ -193,7 +205,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Now checking whether any potential T and B0 pairs exist..." << std::endl;
     count = 0;
     auto start_time = omp_get_wtime();
-    #pragma omp parallel private(possible_B0_matrices) shared(b0_cols, start_time, starting_point_cloud, ending_point_cloud, starting_orbits, ending_orbits, possible_transition_matrices, std::cout, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT) default(none)
+    #pragma omp parallel private(possible_B0_matrices) shared(check_translation_map, b0_cols, start_time, starting_point_cloud, ending_point_cloud, starting_orbits, ending_orbits, possible_transition_matrices, std::cout, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT) default(none)
     {
         #pragma omp master
         {
@@ -215,7 +227,7 @@ int main(int argc, char *argv[]) {
 
                 count++;
 
-                #pragma omp task private(possible_B0_matrices) firstprivate(count, transition_matrix) shared(b0_cols, starting_orbits, starting_point_cloud, ending_orbits, ending_point_cloud, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT, std::cout) default(none)
+                #pragma omp task private(possible_B0_matrices) firstprivate(count, transition_matrix) shared(check_translation_map, b0_cols, starting_orbits, starting_point_cloud, ending_orbits, ending_point_cloud, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT, std::cout) default(none)
                 {
                     possible_B0_matrices = findPossibleB0Matrices(transition_matrix, starting_orbits,
                                                                         starting_point_cloud,
@@ -223,8 +235,9 @@ int main(int argc, char *argv[]) {
                     if (!possible_B0_matrices.empty()) {
                         // check if any of the products work
                         for (const EigenType::Matrix6f &curr_b0_matrix: possible_B0_matrices) {
-                            if (verifyProductComesFromEndingOrbits(transition_matrix, curr_b0_matrix, ending_orbits,
-                                                                   ending_point_cloud, b0_cols)) {
+                            if (verifyProductComesFromEndingOrbits(transition_matrix, curr_b0_matrix, starting_orbits,
+                                                                   ending_orbits,
+                                                                   ending_point_cloud, check_translation_map, b0_cols)) {
                                 #pragma omp critical
                                 {
                                     fout << count << std::endl;
@@ -641,7 +654,11 @@ std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f &transition_matrix, 
     return possible_b0_matrices;
 }
 
-bool verifyProductComesFromEndingOrbits(const Matrix6f& transition_matrix, const Eigen::MatrixXf& b0_matrix, const std::vector<std::vector<Vector6f>>& ending_orbits, const std::vector<Vector6f>& ending_point_cloud, int num_cols) {
+bool verifyProductComesFromEndingOrbits(const Matrix6f &transition_matrix, const Eigen::MatrixXf &b0_matrix,
+                                        const std::vector<std::vector<Vector6f>> &starting_orbits,
+                                        const std::vector<std::vector<Vector6f>> &ending_orbits,
+                                        const std::vector<Vector6f> &ending_point_cloud, bool check_translation_map,
+                                        int num_cols) {
     Eigen::MatrixXf product = transition_matrix*b0_matrix;
     if (num_cols < 0) {
         num_cols = product.cols();
@@ -683,6 +700,20 @@ bool verifyProductComesFromEndingOrbits(const Matrix6f& transition_matrix, const
             if (curr_orbit_done)
                 break;
         }
+    }
+
+    // finally, if specified, check whether the translation vectors map to each other
+    // in the B0 matrix this is the last column created by a starting orbit
+    // in ending_orbits vector this is the last orbit
+    if (check_translation_map) {
+        bool translation_maps_to_each_other = false;
+        for (const Vector6f& translation_vector : ending_orbits.back()) {
+            if ((product.col(starting_orbits.size()-1)).isApprox(translation_vector)) {
+                translation_maps_to_each_other = true;
+            }
+        }
+        if (!translation_maps_to_each_other)
+            return false;
     }
 
     return orbits_represented == ending_orbits.size();
