@@ -536,7 +536,10 @@ std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(co
     int orbits_that_might_work;
     auto start_time = omp_get_wtime();
     Vector6f current_Tv_product;
-    for (Matrix6f transition_matrix : possible_matrices) {
+
+    #pragma omp parallel for private(orbits_that_might_work) shared(possible_matrices, starting_orbits, ending_point_cloud, max_norm_of_ending_point_cloud, reduced_matrices) default(none)
+    for (int i = 0; i < possible_matrices.size(); i++) {
+        Matrix6f transition_matrix = possible_matrices[i];
         orbits_that_might_work = 0;
         for (const std::vector<Vector6f>& orbit : starting_orbits) {
             bool orbits_maps_into_ending_point_cloud = [&] {
@@ -569,6 +572,7 @@ std::vector<Matrix6f> reducePossibleMatricesByCheckingMapIntoEndingPointCloud(co
         // check if something from each orbit could map into the ending point cloud
         if (orbits_that_might_work == starting_orbits.size()) {
             MatrixFunctions::fixZeroEntries(transition_matrix);
+            #pragma omp critical
             reduced_matrices.push_back(transition_matrix);
         }
     }
