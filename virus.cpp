@@ -373,7 +373,7 @@ std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPo
             possible_transition_matrices, starting_orbits, ending_point_cloud);
 
     // combine the two lists, hopefully the reduction did enough so this nested loop doesn't take long
-    std::cout << "Merging D_10 lists together..." << std::endl;
+    std::cout << "Merging D_10 lists together, a total of " << reduced_matrices_first_four_vars.size()*reduced_matrices_last_two_vars.size() << " to merge..." << std::endl;
     possible_transition_matrices.clear();
     for (const Matrix6f& m1 : reduced_matrices_first_four_vars) {
         for (const Matrix6f& m2 : reduced_matrices_last_two_vars) {
@@ -450,7 +450,7 @@ std::vector<Matrix6f> possibleTransitionMatricesInD6WithCheckingMapIntoEndingPoi
     }
 
     // combine the two lists, hopefully the reduction did enough so this nested loop doesn't take long
-    std::cout << "Merging D_6 lists together..." << std::endl;
+    std::cout << "Merging D_6 lists together, a total of " << reduced_matrices_first_four_vars.size()*reduced_matrices_last_four_vars.size() << " to merge..." << std::endl;
     possible_transition_matrices.clear();
     for (const Matrix6f& m1 : reduced_matrices_first_four_vars) {
         for (const Matrix6f& m2 : reduced_matrices_last_four_vars) {
