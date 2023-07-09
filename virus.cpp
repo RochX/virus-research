@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "Number of candidate transition matrices: " << possible_transition_matrices.size() << std::endl << std::endl;
 
-    std::ofstream fout (curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + ".txt");
+    std::ofstream fout (curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + "_" + std::to_string(b0_cols) + "_cols.txt");
 
     std::vector<Matrix6f> possible_B0_matrices;
 
