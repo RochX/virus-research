@@ -28,9 +28,9 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-
+    const std::string OUTPUT_FILE_NAME = curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + "_" + std::to_string(b0_cols) + "_cols.txt";
     std::cout << "Getting T and B0 matrices that worked for group " + centralizer_to_check + " on virus " + current_virus + " from file...\n";
-    std::ifstream fin (curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + ".txt");
+    std::ifstream fin (OUTPUT_FILE_NAME);
 
     if (!fin.is_open()) {
         std::cout << "Failed to open file:\t" + curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + ".txt" << std::endl;

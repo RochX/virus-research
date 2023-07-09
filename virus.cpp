@@ -215,7 +215,8 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "Number of candidate transition matrices: " << possible_transition_matrices.size() << std::endl << std::endl;
 
-    std::ofstream fout (curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + "_" + std::to_string(b0_cols) + "_cols.txt");
+    const std::string OUTPUT_FILE_NAME = curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + "_" + std::to_string(b0_cols) + "_cols.txt";
+    std::ofstream fout (OUTPUT_FILE_NAME);
 
     std::vector<Matrix6f> possible_B0_matrices;
 
@@ -282,7 +283,7 @@ int main(int argc, char *argv[]) {
     fout.close();
 
     std::cout << "Getting T and B0 matrices that worked for group " + centralizer_to_check + " from file...\n";
-    std::ifstream fin (curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + ".txt");
+    std::ifstream fin (OUTPUT_FILE_NAME);
     outputResults::outputXcolB0(fin, b0_cols);
     fin.close();
     std::cout << "Done with file.\n";
