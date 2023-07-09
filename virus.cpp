@@ -23,7 +23,7 @@
 
 using namespace EigenType;
 
-std::vector<float> possibleTransitionMatrixEntriesHardCoded(float lower_bound = -10, float upper_bound = 10);
+std::vector<float> possibleTransitionMatrixEntriesHardCoded(int lower_bound, int upper_bound, const std::vector<float>& fractions_to_use);
 std::vector<Matrix6f> possibleTransitionMatricesInICO(const std::vector<float>& possible_entries);
 std::vector<Matrix6f> possibleTransitionMatricesInD10WithCheckingMapIntoEndingPointCloud(const std::vector<float> &possible_entries,
                                                                    const std::vector<std::vector<Vector6f>> &starting_orbits,
@@ -132,14 +132,31 @@ int main(int argc, char *argv[]) {
     */
 
     // TODO: add more versatile user input, for now this is fine
-    std::vector<float> possible_transition_matrix_entries = possibleTransitionMatrixEntriesHardCoded(-5, 5);
-    std::vector<std::vector<float>> example_entry_lists {{-1, 0, 1},
-                                                         {-1, -0.5, 0, 0.5, 1},
-                                                         {-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2},
-                                                         {-3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3},
-                                                         possibleTransitionMatrixEntriesHardCoded(-1, 1),
-                                                         possibleTransitionMatrixEntriesHardCoded(-2, 2),
-                                                         possibleTransitionMatrixEntriesHardCoded(-3, 3)};
+    std::vector<float> possible_transition_matrix_entries;
+    std::vector<float> ints;
+    std::vector<float> halves {0.5};
+    std::vector<float> fourths {0.25};
+    std::vector<float> eighths {0.125};
+    std::vector<float> halves_thirds {0.5, 1.0/3.0};
+    std::vector<float> fourths_thirds {0.25, 1.0/3.0};
+    std::vector<float> fourths_sixths {0.25, 1.0/6.0};
+    std::vector<float> eighths_thirds {0.125, 1.0/6.0};
+    std::vector<float> eighths_sixths {0.125, 1.0/6.0};
+    std::vector<std::vector<float>> example_entry_lists {possibleTransitionMatrixEntriesHardCoded(-1, 1, ints),
+                                                         possibleTransitionMatrixEntriesHardCoded(-1, 1, halves),
+                                                         possibleTransitionMatrixEntriesHardCoded(-1, 1, halves),
+                                                         possibleTransitionMatrixEntriesHardCoded(-1, 1, halves_thirds),
+                                                         possibleTransitionMatrixEntriesHardCoded(-2, 2, halves),
+                                                         possibleTransitionMatrixEntriesHardCoded(-2, 2, halves_thirds),
+                                                         possibleTransitionMatrixEntriesHardCoded(-2, 2, fourths),
+                                                         possibleTransitionMatrixEntriesHardCoded(-2, 2, fourths_thirds),
+                                                         possibleTransitionMatrixEntriesHardCoded(-2, 2, eighths),
+                                                         possibleTransitionMatrixEntriesHardCoded(-2, 2, eighths_sixths),
+                                                         possibleTransitionMatrixEntriesHardCoded(-3, 3, fourths_thirds),
+                                                         possibleTransitionMatrixEntriesHardCoded(-3, 3, eighths),
+                                                         possibleTransitionMatrixEntriesHardCoded(-3, 3, eighths_thirds),
+                                                         possibleTransitionMatrixEntriesHardCoded(-3, 3, eighths_sixths)};
+
     std::cout << "Which entry list for transition matrices to use? Here are the lists:\n";
     for (int i = 0; i < example_entry_lists.size(); i++) {
         std::cout << "List " << i << ":\t";
@@ -285,22 +302,23 @@ int main(int argc, char *argv[]) {
 }
 
 
-std::vector<float> possibleTransitionMatrixEntriesHardCoded(float lower_bound, float upper_bound) {
+std::vector<float> possibleTransitionMatrixEntriesHardCoded(int lower_bound, int upper_bound, const std::vector<float>& fractions_to_use) {
     std::vector<float> possible_T_entries;
 
-    float fourths = lower_bound;
-    while (fourths <= upper_bound) {
-        std_vector_functions::push_backIfNotInVector<float>(possible_T_entries, fourths, 0.0001);
-        fourths += 1.0f/4;
+    int curr_int = lower_bound;
+    while (curr_int <= upper_bound) {
+        possible_T_entries.push_back(static_cast<float>(curr_int));
+        curr_int++;
     }
 
-    float sixths = lower_bound;
-    while (sixths <= upper_bound) {
-        std_vector_functions::push_backIfNotInVector<float>(possible_T_entries, sixths, 0.0001);
-        sixths += 1.0f/6;
+    for (float f : fractions_to_use) {
+        assert(f > 0);
+        float curr_frac = lower_bound;
+        while(curr_frac <= upper_bound) {
+            std_vector_functions::push_backIfNotInVector<float>(possible_T_entries, curr_frac, 0.0001);
+            curr_frac += f;
+        }
     }
-
-    std_vector_functions::push_backIfNotInVector<float>(possible_T_entries, upper_bound, 0.0001);
 
     std::sort(possible_T_entries.begin(), possible_T_entries.end());
     return possible_T_entries;
