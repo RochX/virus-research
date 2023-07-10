@@ -78,17 +78,57 @@ int main(int argc, char *argv[]) {
     std::getline(b0_in, line);
     std::getline(b1_in, line);
     std::vector<float> possible_entries;
+    std::vector<float> fracs;
+    float min_entry = 0, max_entry = 0;
 
     for (int i = 0; i < sample_size/divides; i++) {
         possible_entries = findPossibleTEntriesBySampling(b0_in, b1_in, divides);
         std::cout << "Entries:\t";
         for (float e: possible_entries) {
+            if (0 < e && e < 1)
+                std_vector_functions::push_backIfNotInVector<float>(fracs, e, 0.0001);
+
+            min_entry = std::min(min_entry, e);
+            max_entry = std::max(max_entry, e);
+
             std::cout << e;
             if (e != possible_entries.back())
                 std::cout << ", ";
         }
         std::cout << std::endl;
     }
+
+    std::sort(fracs.begin(), fracs.end());
+    float mult;
+    for (float f : fracs) {
+        if (float_functions::FloatIsApproxZero(f))
+            continue;
+
+        mult = 2;
+        while (mult*f < 1) {
+            for (auto it = fracs.begin(); it != fracs.end(); it++) {
+                if (float_functions::FloatsAreApproxEqual(mult*f, *(it))) {
+                    fracs.erase(it);
+                    break;
+                }
+            }
+            mult++;
+        }
+    }
+
+    std::cout << "\n\nSummary:\n";
+    std::cout << "Virus:\t" << current_virus << std::endl;
+    std::cout << "Sample Size:\t" << sample_size << std::endl;
+    std::cout << "Divided into Chunks of:\t" << divides << std::endl;
+    std::cout << std::endl;
+    std::cout << "Fractional Entries:\n";
+    for (float f : fracs) {
+        std::cout << "\t" << f << std::endl;
+    }
+    std::cout << std::endl;
+
+    std::cout << "Minimum Entry Found:\t" << min_entry << std::endl;
+    std::cout << "Maximum Entry Found:\t" << max_entry << std::endl;
 }
 
 std::vector<float> getTEntries(const Matrix6f& b0_matrix, const Matrix6f& b1_matrix) {
