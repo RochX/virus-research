@@ -134,27 +134,27 @@ namespace GeneratingVectorsForViruses {
             starting_generators = generatorsOf1044();
             ending_generators = generatorsOf1227();
         }
-        else if (virus_name == "CVA10 N-M") {
+        else if (virus_name == "CVA10_N-M") {
             starting_generators = generatorsOfCVA10Native();
             ending_generators = generatorsOfCVA10Mature();
         }
-        else if (virus_name == "CVA10 M-A") {
+        else if (virus_name == "CVA10_M-A") {
             starting_generators = generatorsOfCVA10Mature();
             ending_generators = generatorsOfCVA10Aparticle();
         }
-        else if (virus_name == "D68 N-M") {
+        else if (virus_name == "D68_N-M") {
             starting_generators = generatorsOfD68Native();
             ending_generators = generatorsOfD68Mature();
         }
-        else if (virus_name == "D68 M-A") {
+        else if (virus_name == "D68_M-A") {
             starting_generators = generatorsOfD68Mature();
             ending_generators = generatorsOfD68Aparticle();
         }
-        else if (virus_name == "HE71 N-M") {
+        else if (virus_name == "HE71_N-M") {
             starting_generators = generatorsOfHE71Native();
             ending_generators = generatorsOfHE71Mature();
         }
-        else if (virus_name == "HE71 M-A") {
+        else if (virus_name == "HE71_M-A") {
             starting_generators = generatorsOfHE71Mature();
             ending_generators = generatorsOfHE71Aparticle();
         }
