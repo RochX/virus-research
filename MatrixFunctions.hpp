@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 
 #include "EigenTypes.hpp"
+#include "float_functions.hpp"
 
 #ifndef VIRUS_RESEARCH_MATRIXFUNCTIONS_HPP
 #define VIRUS_RESEARCH_MATRIXFUNCTIONS_HPP

@@ -10,7 +10,7 @@ find_package (Eigen3 3.3 REQUIRED)
 
 include_directories(eigen-3.4.0)
 
-add_executable(virus_research virus.cpp Matrix6fFileReader.cpp IcosahedralGroup.cpp TetrahedralGroup.cpp TetrahedralGroup.hpp Matrix6fGroup.cpp Matrix6fGroup.hpp PermutationGroup.cpp PermutationGroup.hpp std_vector_functions.cpp std_vector_functions.hpp MatrixFunctions.cpp MatrixFunctions.hpp DihedralGroupOnTen.cpp DihedralGroupOnTen.hpp DihedralGroupOnSix.cpp DihedralGroupOnSix.hpp GeneratingVectorsForViruses.cpp GeneratingVectorsForViruses.hpp outputResults.cpp outputResults.hpp)
-add_executable(print_output_results printOutputResults.cpp outputResults.cpp Matrix6fFileReader.cpp MatrixFunctions.cpp outputResults.hpp)
-add_executable(entry_sampling sampling.cpp GeneratingVectorsForViruses.cpp IcosahedralGroup.cpp Matrix6fFileReader.cpp Matrix6fGroup.cpp MatrixFunctions.cpp std_vector_functions.cpp)
+add_executable(virus_research virus.cpp Matrix6fFileReader.cpp IcosahedralGroup.cpp TetrahedralGroup.cpp TetrahedralGroup.hpp Matrix6fGroup.cpp Matrix6fGroup.hpp PermutationGroup.cpp PermutationGroup.hpp std_vector_functions.cpp std_vector_functions.hpp MatrixFunctions.cpp MatrixFunctions.hpp DihedralGroupOnTen.cpp DihedralGroupOnTen.hpp DihedralGroupOnSix.cpp DihedralGroupOnSix.hpp GeneratingVectorsForViruses.cpp GeneratingVectorsForViruses.hpp outputResults.cpp outputResults.hpp float_functions.cpp float_functions.hpp)
+add_executable(print_output_results printOutputResults.cpp outputResults.cpp Matrix6fFileReader.cpp MatrixFunctions.cpp outputResults.hpp float_functions.cpp float_functions.hpp)
+add_executable(entry_sampling sampling.cpp GeneratingVectorsForViruses.cpp IcosahedralGroup.cpp Matrix6fFileReader.cpp Matrix6fGroup.cpp MatrixFunctions.cpp std_vector_functions.cpp float_functions.cpp float_functions.hpp)
 target_link_libraries (virus_research Eigen3::Eigen)

@@ -1,27 +1,5 @@
 #include "MatrixFunctions.hpp"
 
-// anonymous namespace for private functions
-namespace {
-    bool FloatIsApproxZero(float x) {
-        const float epsilon = 0.00001;
-        return std::fabs(x) < epsilon;
-    }
-
-    bool FloatsAreApproxEqual(float x, float y) {
-        if (std::fabs(x) < 0.00001)
-            return FloatIsApproxZero(y);
-        if (std::fabs(y) < 0.00001)
-            return FloatIsApproxZero(x);
-
-        const float relative_difference_factor = 0.0001;    // 0.01%
-        const float greater_magnitude = std::max(std::fabs(x),std::fabs(y));
-
-        return std::fabs(x-y) < relative_difference_factor * greater_magnitude;
-    }
-
-
-}
-
 namespace MatrixFunctions {
     void print_size(const Eigen::MatrixXf& b)
     {
@@ -37,7 +15,7 @@ namespace MatrixFunctions {
             if (remove_duplicates) {
                 bool found = [&] {
                     for (float f : entries) {
-                        if (FloatsAreApproxEqual(curr, f))
+                        if (float_functions::FloatsAreApproxEqual(curr, f))
                             return true;
                     }
                     return false;
@@ -59,7 +37,7 @@ namespace MatrixFunctions {
 
                 // check if it is any of the valid values
                 for (float val : values) {
-                    if (FloatsAreApproxEqual(matrix(i,j), val)) {
+                    if (float_functions::FloatsAreApproxEqual(matrix(i,j), val)) {
                         entry_is_valid = true;
                         break;
                     }
@@ -77,7 +55,7 @@ namespace MatrixFunctions {
     void fixZeroEntries(Eigen::MatrixXf& matrix) {
         for (int i = 0; i < matrix.rows(); ++i) {
             for (int j = 0; j < matrix.cols(); ++j) {
-                if (FloatsAreApproxEqual(matrix(i,j), 0)) {
+                if (float_functions::FloatsAreApproxEqual(matrix(i,j), 0)) {
                     matrix(i,j) = 0;
                 }
             }
@@ -87,7 +65,7 @@ namespace MatrixFunctions {
     void fixZeroEntries(EigenType::Matrix6f& matrix) {
         for (int i = 0; i < matrix.rows(); ++i) {
             for (int j = 0; j < matrix.cols(); ++j) {
-                if (FloatIsApproxZero(matrix(i,j))) {
+                if (float_functions::FloatIsApproxZero(matrix(i,j))) {
                     matrix(i,j) = 0;
                 }
             }
@@ -97,7 +75,7 @@ namespace MatrixFunctions {
     void fixZeroEntries(EigenType::Matrix6fx3f& matrix) {
         for (int i = 0; i < matrix.rows(); ++i) {
             for (int j = 0; j < matrix.cols(); ++j) {
-                if (FloatIsApproxZero(matrix(i,j))) {
+                if (float_functions::FloatIsApproxZero(matrix(i,j))) {
                     matrix(i,j) = 0;
                 }
             }

@@ -1,25 +1,5 @@
 #include "std_vector_functions.hpp"
 
-// anonymous namespace for private functions
-namespace {
-    bool FloatIsApproxZero(float x) {
-        const float epsilon = 0.00001;
-        return std::fabs(x) < epsilon;
-    }
-
-    bool FloatsAreApproxEqual(float x, float y) {
-        if (std::fabs(x) < 0.00001)
-            return FloatIsApproxZero(y);
-        if (std::fabs(y) < 0.00001)
-            return FloatIsApproxZero(x);
-
-        const float relative_difference_factor = 0.0001;    // 0.01%
-        const float greater_magnitude = std::max(std::fabs(x),std::fabs(y));
-
-        return std::fabs(x-y) < relative_difference_factor * greater_magnitude;
-    }
-}
-
 // need to explicitly declare what types are used with the template
 template void std_vector_functions::append_vector(std::vector<EigenType::Vector6f>& v1, std::vector<EigenType::Vector6f>& v2, bool removeDups);
 template void std_vector_functions::append_vector(std::vector<EigenType::Matrix6f>& v1, std::vector<EigenType::Matrix6f>& v2, bool removeDups);
@@ -49,7 +29,7 @@ void std_vector_functions::append_vector(std::vector<float> &v1, std::vector<flo
         if (removeDups) {
             bool in_v1 = false;
             for (const float &f : v1) {
-                if (FloatsAreApproxEqual(v, f))
+                if (float_functions::FloatsAreApproxEqual(v, f))
                     in_v1 = true;
             }
             if (!in_v1)

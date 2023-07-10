@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "EigenTypes.hpp"
+#include "float_functions.hpp"
 
 #ifndef VIRUS_RESEARCH_STD_VECTOR_FUNCTIONS_HPP
 #define VIRUS_RESEARCH_STD_VECTOR_FUNCTIONS_HPP
