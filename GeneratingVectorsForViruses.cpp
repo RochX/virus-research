@@ -88,6 +88,8 @@ namespace {
                 translations.push_back(base_translation_pair.second);
             }
         }
+        // should only be one translation
+        assert(translations.size() == 1);
 
         std::vector<EigenType::Vector6f> generators;
         generators.insert(generators.end(), bases.begin(), bases.end());
