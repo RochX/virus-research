@@ -91,9 +91,10 @@ namespace {
         // should only be one translation
         assert(translations.size() == 1);
 
+        // convention: put translation vector first!
         std::vector<EigenType::Vector6f> generators;
-        generators.insert(generators.end(), bases.begin(), bases.end());
         generators.insert(generators.end(), translations.begin(), translations.end());
+        generators.insert(generators.end(), bases.begin(), bases.end());
 
         return generators;
     }

@@ -51,8 +51,8 @@ std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f &transition_matrix, 
 bool verifyProductComesFromEndingOrbits(const Matrix6f &transition_matrix, const Eigen::MatrixXf &b0_matrix,
                                         const std::vector<std::vector<Vector6f>> &starting_orbits,
                                         const std::vector<std::vector<Vector6f>> &ending_orbits,
-                                        const std::vector<Vector6f> &ending_point_cloud, bool check_translation_map,
-                                        int num_cols = -1);
+                                        const std::vector<Vector6f> &ending_point_cloud, bool check_base_map,
+                                        bool check_translation_map, int num_cols);
 
 int main(int argc, char *argv[]) {
     std::string curr_directory;
@@ -70,6 +70,7 @@ int main(int argc, char *argv[]) {
     std::string line;
     int b0_cols;
     bool check_translation_map = false;
+    bool check_base_map = false;
 
     std::cout << "Enter which virus to work on:\n";
     std::getline(std::cin, current_virus);
@@ -83,6 +84,11 @@ int main(int argc, char *argv[]) {
     std::getline(std::cin, line);
     if (line == "Y" || line == "y") {
         check_translation_map = true;
+    }
+    std::cout << "Require that the base vectors map to each other?\n(Y/N):";
+    std::getline(std::cin, line);
+    if (line == "Y" || line == "y") {
+        check_base_map = true;
     }
 
     std::cout << "The current virus has " << starting_generators.size() << " starting generators and "
@@ -223,7 +229,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Now checking whether any potential T and B0 pairs exist..." << std::endl;
     count = 0;
     auto start_time = omp_get_wtime();
-    #pragma omp parallel private(possible_B0_matrices) shared(check_translation_map, b0_cols, start_time, starting_point_cloud, ending_point_cloud, starting_orbits, ending_orbits, possible_transition_matrices, std::cout, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT) default(none)
+    #pragma omp parallel private(possible_B0_matrices) shared(check_base_map, check_translation_map, b0_cols, start_time, starting_point_cloud, ending_point_cloud, starting_orbits, ending_orbits, possible_transition_matrices, std::cout, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT) default(none)
     {
         #pragma omp master
         {
@@ -245,7 +251,7 @@ int main(int argc, char *argv[]) {
 
                 count++;
 
-                #pragma omp task private(possible_B0_matrices) firstprivate(count, transition_matrix) shared(check_translation_map, b0_cols, starting_orbits, starting_point_cloud, ending_orbits, ending_point_cloud, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT, std::cout) default(none)
+                #pragma omp task private(possible_B0_matrices) firstprivate(count, transition_matrix) shared(check_base_map, check_translation_map, b0_cols, starting_orbits, starting_point_cloud, ending_orbits, ending_point_cloud, fout, EigenType::COMMA_SEP_VALS, EigenType::TAB_INDENT, std::cout) default(none)
                 {
                     possible_B0_matrices = findPossibleB0Matrices(transition_matrix, starting_orbits,
                                                                         starting_point_cloud,
@@ -255,7 +261,8 @@ int main(int argc, char *argv[]) {
                         for (const EigenType::Matrix6f &curr_b0_matrix: possible_B0_matrices) {
                             if (verifyProductComesFromEndingOrbits(transition_matrix, curr_b0_matrix, starting_orbits,
                                                                    ending_orbits,
-                                                                   ending_point_cloud, check_translation_map, b0_cols)) {
+                                                                   ending_point_cloud, check_base_map, check_translation_map,
+                                                                   b0_cols)) {
                                 #pragma omp critical
                                 {
                                     fout << count << std::endl;
@@ -293,6 +300,7 @@ int main(int argc, char *argv[]) {
     std::cout << "\tVirus:\t" << current_virus << std::endl;
     std::cout << "\tCentralizer:\t" << centralizer_to_check << std::endl;
     std::cout << "\tCheck translation to translation:\t" << (check_translation_map ? "Yes" : "No") << std::endl;
+    std::cout << "\tCheck base to base:\t" << (check_base_map ? "Yes" : "No") << std::endl;
     std::cout << "\tEntry list:\t";
     for (float e : possible_transition_matrix_entries) {
         std::cout << e;
@@ -691,8 +699,8 @@ std::vector<Matrix6f> findPossibleB0Matrices(const Matrix6f &transition_matrix, 
 bool verifyProductComesFromEndingOrbits(const Matrix6f &transition_matrix, const Eigen::MatrixXf &b0_matrix,
                                         const std::vector<std::vector<Vector6f>> &starting_orbits,
                                         const std::vector<std::vector<Vector6f>> &ending_orbits,
-                                        const std::vector<Vector6f> &ending_point_cloud, bool check_translation_map,
-                                        int num_cols) {
+                                        const std::vector<Vector6f> &ending_point_cloud, bool check_base_map,
+                                        bool check_translation_map, int num_cols) {
     Eigen::MatrixXf product = transition_matrix*b0_matrix;
     if (num_cols < 0) {
         num_cols = product.cols();
@@ -736,13 +744,74 @@ bool verifyProductComesFromEndingOrbits(const Matrix6f &transition_matrix, const
         }
     }
 
+    // if we are checking translation or base map
+    // figure out where each vector comes from (translation or base)
+    if (check_base_map || check_translation_map) {
+        std::vector<std::pair<Vector6f, bool>> p0_is_translation_vector;
+        for (int i = 0; i < b0_matrix.cols(); i++) {
+            Vector6f p0_vector = b0_matrix.col(i);
+            bool vector_is_p0_translation = [&] {
+                // begin lambda
+                for (const Vector6f& translation_vector : starting_orbits.front()) {
+                    if (p0_vector.isApprox(translation_vector))
+                        return true;
+                }
+                return false;
+            }(); // end lambda
+            p0_is_translation_vector.emplace_back(p0_vector, vector_is_p0_translation);
+        }
+
+        if (check_base_map) {
+            for (int i = 0; i < product.cols(); i++) {
+                if (p0_is_translation_vector[i].second)
+                    continue;
+                Vector6f p1_vector = product.col(i);
+                bool p1_vector_is_p1_base = [&] {
+                    // begin lambda
+                    for (const Vector6f& translation_vector : ending_orbits.front()) {
+                        if (p1_vector.isApprox(translation_vector))
+                            return false;
+                    }
+                    return true;
+                }(); // end lambda
+
+                if (!p1_vector_is_p1_base)
+                    return false;
+            }
+        }
+
+        if (check_translation_map) {
+            for (int i = 0; i < product.cols(); i++) {
+                if (!p0_is_translation_vector[i].second)
+                    continue;
+                Vector6f p1_vector = product.col(i);
+                bool p1_vector_is_p1_translation = [&] {
+                    // begin lambda
+                    for (const Vector6f& translation_vector : ending_orbits.front()) {
+                        if (p1_vector.isApprox(translation_vector))
+                            return true;
+                    }
+                    return false;
+                }(); // end lambda
+
+                if (!p1_vector_is_p1_translation)
+                    return false;
+            }
+        }
+    }
+
+    // check that the base vector map only to other base vectors (i.e. not the translation)
+    // base vectors are all columns past the first (sorta not really)
+    // they are guaranteed to be base vectors if they are used to from the starting_orbit list
+    // if they come from the general point array, there is no guarantee if they come from translation or base vectors
+
+
     // finally, if specified, check whether the translation vectors map to each other
-    // in the B0 matrix this is the last column created by a starting orbit
-    // in ending_orbits vector this is the last orbit
+    // by convention, this is the first orbit in all cases
     if (check_translation_map) {
         bool translation_maps_to_each_other = false;
-        for (const Vector6f& translation_vector : ending_orbits.back()) {
-            if ((product.col(starting_orbits.size()-1)).isApprox(translation_vector)) {
+        for (const Vector6f& translation_vector : ending_orbits.front()) {
+            if ((product.col(0)).isApprox(translation_vector)) {
                 translation_maps_to_each_other = true;
             }
         }
