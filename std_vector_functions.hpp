@@ -13,6 +13,9 @@ namespace std_vector_functions {
     void append_vector(std::vector<T>& v1, const std::vector<T> &v2, bool removeDups);
     void append_vector(std::vector<float> &v1, const std::vector<float> &v2, bool removeDups);
 
+    std::vector<float> concat_vectors(const std::vector<float> &v1, const std::vector<float> &v2, bool removeDups,
+                                      bool sort);
+
     template <typename T>
     void push_backIfNotInVector(std::vector<T> &vector, T element, T epsilon = 0);
 

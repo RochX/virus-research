@@ -42,6 +42,15 @@ void std_vector_functions::append_vector(std::vector<float> &v1, const std::vect
     }
 }
 
+std::vector<float> std_vector_functions::concat_vectors(const std::vector<float> &v1, const std::vector<float> &v2, bool removeDups, bool sort) {
+    std::vector<float> concat;
+    std_vector_functions::append_vector(concat, v1, removeDups);
+    std_vector_functions::append_vector(concat, v2, removeDups);
+    if (sort)
+        std::sort(concat.begin(), concat.end());
+    return concat;
+}
+
 template <typename T>
 void std_vector_functions::push_backIfNotInVector(std::vector<T> &vector, T element, T epsilon) {
     bool addElement = true;
