@@ -1,14 +1,14 @@
 #include "std_vector_functions.hpp"
 
 // need to explicitly declare what types are used with the template
-template void std_vector_functions::append_vector(std::vector<EigenType::Vector6f>& v1, std::vector<EigenType::Vector6f>& v2, bool removeDups);
-template void std_vector_functions::append_vector(std::vector<EigenType::Matrix6f>& v1, std::vector<EigenType::Matrix6f>& v2, bool removeDups);
+template void std_vector_functions::append_vector(std::vector<EigenType::Vector6f>& v1, const std::vector<EigenType::Vector6f> &v2, bool removeDups);
+template void std_vector_functions::append_vector(std::vector<EigenType::Matrix6f>& v1, const std::vector<EigenType::Matrix6f> &v2, bool removeDups);
 template void std_vector_functions::push_backIfNotInVector(std::vector<float> &vector, float element, float epsilon);
 template std::vector<EigenType::Vector6f> std_vector_functions::unravelTwoDimVector(std::vector<std::vector<EigenType::Vector6f>> two_dim_vector, bool remove_duplicates);
 
 // append the contents of v2 to v1, possibly checking for duplicates
 template <typename T>
-void std_vector_functions::append_vector(std::vector<T>& v1, std::vector<T>& v2, bool removeDups) {
+void std_vector_functions::append_vector(std::vector<T>& v1, const std::vector<T> &v2, bool removeDups) {
     for (const T &v : v2) {
         // if bool is true only append if it is not a duplicate
         if (removeDups) {
@@ -23,7 +23,7 @@ void std_vector_functions::append_vector(std::vector<T>& v1, std::vector<T>& v2,
     }
 }
 
-void std_vector_functions::append_vector(std::vector<float> &v1, std::vector<float> &v2, bool removeDups) {
+void std_vector_functions::append_vector(std::vector<float> &v1, const std::vector<float> &v2, bool removeDups) {
     for (const float &v : v2) {
         // if bool is true only append if it is not a duplicate
         if (removeDups) {
