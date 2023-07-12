@@ -748,9 +748,20 @@ bool verifyProductComesFromEndingOrbits(const Matrix6f &transition_matrix, const
     // if we are checking translation or base map
     // figure out where each vector comes from (translation or base)
     if (check_base_map || check_translation_map) {
-        std::vector<std::pair<Vector6f, bool>> p0_is_translation_vector;
+        // tuple: vector, is_translation, is_base
+        std::vector<std::tuple<Vector6f, bool, bool>> p0_is_translation_or_base_vector;
         for (int i = 0; i < b0_matrix.cols(); i++) {
             Vector6f p0_vector = b0_matrix.col(i);
+            // if within first orbits we know exactly what it is; first is translation, rest of generators are bases
+            if (i < starting_orbits.size()) {
+                if (i == 0)
+                    p0_is_translation_or_base_vector.emplace_back(p0_vector, true, false);
+                else
+                    p0_is_translation_or_base_vector.emplace_back(p0_vector, false, true);
+
+                continue;
+            }
+
             bool vector_is_p0_translation = [&] {
                 // begin lambda
                 for (const Vector6f& translation_vector : starting_orbits.front()) {
@@ -759,34 +770,32 @@ bool verifyProductComesFromEndingOrbits(const Matrix6f &transition_matrix, const
                 }
                 return false;
             }(); // end lambda
-            p0_is_translation_vector.emplace_back(p0_vector, vector_is_p0_translation);
+            bool vector_is_p0_base = [&] {
+               // begin lambda
+               // we start at 1 since 0 is translation
+               for (int i = 1; i < starting_orbits.size(); i++) {
+                   for (const Vector6f& base_vector : starting_orbits[i]) {
+                       if (p0_vector.isApprox(base_vector))
+                           return true;
+                   }
+               }
+
+               return false;
+               // end lambda
+            }();
+            p0_is_translation_or_base_vector.emplace_back(p0_vector, vector_is_p0_translation, vector_is_p0_base);
         }
 
-        if (check_base_map) {
-            for (int i = 0; i < product.cols(); i++) {
-                if (p0_is_translation_vector[i].second)
-                    continue;
-                Vector6f p1_vector = product.col(i);
-                bool p1_vector_is_p1_base = [&] {
-                    // begin lambda
-                    for (const Vector6f& translation_vector : ending_orbits.front()) {
-                        if (p1_vector.isApprox(translation_vector))
-                            return false;
-                    }
-                    return true;
-                }(); // end lambda
+        for (int i = 0; i < product.cols(); i++) {
+            Vector6f p1_vector = product.col(i);
+            bool p0_is_translation = std::get<1>(p0_is_translation_or_base_vector[i]);
+            bool p0_is_base = std::get<2>(p0_is_translation_or_base_vector[i]);
+            bool p1_is_translation = false;
+            bool p1_is_base = false;
 
-                if (!p1_vector_is_p1_base)
-                    return false;
-            }
-        }
-
-        if (check_translation_map) {
-            for (int i = 0; i < product.cols(); i++) {
-                if (!p0_is_translation_vector[i].second)
-                    continue;
-                Vector6f p1_vector = product.col(i);
-                bool p1_vector_is_p1_translation = [&] {
+            // if p0 is only a translation then the corresponding p1 needs to be a translation
+            if (check_translation_map && p0_is_translation && !p0_is_base) {
+                p1_is_translation = [&] {
                     // begin lambda
                     for (const Vector6f& translation_vector : ending_orbits.front()) {
                         if (p1_vector.isApprox(translation_vector))
@@ -795,17 +804,28 @@ bool verifyProductComesFromEndingOrbits(const Matrix6f &transition_matrix, const
                     return false;
                 }(); // end lambda
 
-                if (!p1_vector_is_p1_translation)
+                if (!p1_is_translation)
+                    return false;
+            }
+
+            // if p0 is only a base then p1 needs to be a base
+            if (check_base_map && !p0_is_translation && p0_is_base) {
+                p1_is_base = [&] {
+                    // begin lambda
+                    for (int i = 1; i < ending_orbits.size(); i++) {
+                        for (const Vector6f& base_vector : ending_orbits[i]) {
+                            if (p1_vector.isApprox(base_vector))
+                                return true;
+                        }
+                    }
+                    return false;
+                }(); // end lambda
+
+                if (!p1_is_base)
                     return false;
             }
         }
     }
-
-    // check that the base vector map only to other base vectors (i.e. not the translation)
-    // base vectors are all columns past the first (sorta not really)
-    // they are guaranteed to be base vectors if they are used to from the starting_orbit list
-    // if they come from the general point array, there is no guarantee if they come from translation or base vectors
-
 
     // finally, if specified, check whether the translation vectors map to each other
     // by convention, this is the first orbit in all cases
