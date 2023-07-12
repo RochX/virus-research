@@ -75,6 +75,11 @@ int main(int argc, char *argv[]) {
     std::cout << "Enter which virus to work on:\n";
     std::getline(std::cin, current_virus);
     GeneratingVectorsForViruses::pickVirusType(current_virus, starting_generators, ending_generators);
+    if (starting_generators.empty() || ending_generators.empty()) {
+        std::cout << "Virus inputted is either invalid or not implemented, aborting..." << std::endl;
+        return 0;
+    }
+
     std::cout
             << "Enter which centralizer to check (ICO, A_4, D_6, D_10):\n";// <-- this is one of: "ICO", "A_4", "D_6", or "D_10"
     GeneratingVectorsForViruses::pickVirusType(current_virus, starting_generators, ending_generators);
@@ -107,10 +112,6 @@ int main(int argc, char *argv[]) {
                       << std::endl;
             starting_generators.swap(ending_generators);
         }
-    }
-    if (starting_generators.empty() || ending_generators.empty()) {
-        std::cout << "Virus inputted is either invalid or not implemented, aborting..." << std::endl;
-        return 0;
     }
     assert(!starting_generators.empty());
     assert(!ending_generators.empty());
