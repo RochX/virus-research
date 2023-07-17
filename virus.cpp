@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 // skip matrix if determinant is zero
-                if (transition_matrix.determinant() < 0.000001) {
+                if (std::fabs(transition_matrix.determinant()) < 0.000001) {
                     count++;
                     continue;
                 }
