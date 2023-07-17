@@ -64,6 +64,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    std::pair<std::vector<int>, std::vector<int>> config_num_pair;
+    std::vector<int> starting_config_nums, ending_config_nums;
     std::vector<Vector6f> starting_generators, ending_generators;
     std::string current_virus;
     std::string centralizer_to_check;
@@ -74,15 +76,15 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Enter which virus to work on:\n";
     std::getline(std::cin, current_virus);
-    GeneratingVectorsForViruses::pickVirusType(current_virus, starting_generators, ending_generators);
+    config_num_pair = GeneratingVectorsForViruses::pickVirusType(current_virus, starting_generators, ending_generators, curr_directory);
+    starting_config_nums = config_num_pair.first;
+    ending_config_nums = config_num_pair.second;
     if (starting_generators.empty() || ending_generators.empty()) {
         std::cout << "Virus inputted is either invalid or not implemented, aborting..." << std::endl;
         return 0;
     }
 
-    std::cout
-            << "Enter which centralizer to check (ICO, A_4, D_6, D_10):\n";// <-- this is one of: "ICO", "A_4", "D_6", or "D_10"
-    GeneratingVectorsForViruses::pickVirusType(current_virus, starting_generators, ending_generators);
+    std::cout << "Enter which centralizer to check (ICO, A_4, D_6, D_10):\n";// <-- this is one of: "ICO", "A_4", "D_6", or "D_10"
     std::getline(std::cin, centralizer_to_check);
 
     std::cout << "Require that the translation vectors map to each other?\n(Y/N):";
@@ -111,6 +113,7 @@ int main(int argc, char *argv[]) {
             std::cout << "Swapping, note that you will now need to take the inverse of any transition this program finds."
                       << std::endl;
             starting_generators.swap(ending_generators);
+            starting_config_nums.swap(ending_config_nums);
         }
     }
     assert(!starting_generators.empty());
@@ -295,10 +298,18 @@ int main(int argc, char *argv[]) {
     outputResults::outputXcolB0(fin, b0_cols);
     fin.close();
     std::cout << "Done with file.\n";
-
+    auto config_nums_to_str = [](std::vector<int> lst) {
+        std::string str = "";
+        for (int x : lst) {
+            str += std::to_string(x) + " ";
+        }
+        return str;
+    };
     std::cout << "Completely done in " << omp_get_wtime()-program_start_time << " seconds." << std::endl;
     std::cout << "Summary:\n";
     std::cout << "\tVirus:\t" << current_virus << std::endl;
+    std::cout << "\tStarting Config: " << config_nums_to_str(starting_config_nums) << std::endl;
+    std::cout << "\tEnding Config:\t " << config_nums_to_str(ending_config_nums) << std::endl;
     std::cout << "\tCentralizer:\t" << centralizer_to_check << std::endl;
     std::cout << "\tCheck translation to translation:\t" << (check_translation_map ? "Yes" : "No") << std::endl;
     std::cout << "\tCheck base to base:\t" << (check_base_map ? "Yes" : "No") << std::endl;

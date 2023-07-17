@@ -109,11 +109,63 @@ namespace {
         }
     }
 
+    void initializeVirusConfigFile(const std::string& VIRUS_CONFIG_FILE_NAME) {
+        std::ofstream fout (VIRUS_CONFIG_FILE_NAME);
+        fout << "PhiX174\n55\n12,52,29,53\n";
+        fout << "CCMV\n10\n27\n";
+        fout << "TCV\n8,25,47\n29,13,30,55\n";
+        fout << "HK97\n13,55\n13,30,55\n";
+        fout << "CVA10_N-M\n1,2\n54,55\n";
+        fout << "CVA10_M-A\n54,55\n12,53,13\n";
+        fout << "CVA10_N-A\n1,2\n,12,53,13\n";
+        fout << "D68_N-M\n11,51\n13,54\n";
+        fout << "D68_M-A\n13,54\n1,16,3\n";
+        fout << "D68_N-A\n11,51\n,1,16,3\n";
+        fout << "HE71_N-M\n55\n1,3,18\n";
+        fout << "HE71_M-A\n1,3,18\n13,54\n";
+        fout << "HE71_N-A\n55\n12,53,13\n";
+        fout.close();
+    }
+
+    std::vector<int> readIntVector(std::ifstream& fin) {
+        std::vector<int> ints;
+        std::string line, cell;
+        std::getline(fin, line);
+        std::stringstream ss (line);
+
+        while (getline(ss, cell, ',')) {
+            ints.push_back(std::stoi(cell));
+        }
+
+        return ints;
+    }
 }
 
 namespace GeneratingVectorsForViruses {
-    void pickVirusType(const std::string& virus_name, std::vector<EigenType::Vector6f>& starting_generators, std::vector<EigenType::Vector6f>& ending_generators) {
+    // return a pair indicating what configuration numbers were used
+    // returning a value while also modifying generator vectors by reference feels like obfuscation...
+    std::pair<std::vector<int>, std::vector<int>> pickVirusType(const std::string &virus_name, std::vector<EigenType::Vector6f> &starting_generators,
+                                                                std::vector<EigenType::Vector6f> &ending_generators, const std::string &curr_directory) {
+        const std::string VIRUS_CONFIG_FILE_NAME = curr_directory + "virus_configs.txt";
         initializePointArrayNumbers(point_array_numbering);
+        initializeVirusConfigFile(VIRUS_CONFIG_FILE_NAME);
+        std::ifstream fin (VIRUS_CONFIG_FILE_NAME);
+        std::string line;
+        std::vector<int> starting_point_array_nums, ending_point_array_nums;
+        while (std::getline(fin, line)) {
+            if (virus_name == line) {
+                starting_point_array_nums = readIntVector(fin);
+                ending_point_array_nums = readIntVector(fin);
+                break;
+            }
+        }
+
+        if (!starting_point_array_nums.empty() && !ending_point_array_nums.empty()) {
+            starting_generators = createGeneratorsFromPointArrayNumbers(starting_point_array_nums);
+            ending_generators = createGeneratorsFromPointArrayNumbers(ending_point_array_nums);
+            return std::make_pair(starting_point_array_nums, ending_point_array_nums);
+        }
+
         if (virus_name == "PhiX174") {
             starting_generators = generatorsOfPhiX174Native();
             ending_generators = generatorsOfPhiX174Mature();
@@ -197,6 +249,8 @@ namespace GeneratingVectorsForViruses {
         else if (virus_name == "print all configs") {
             print_all_configs();
         }
+
+        return std::make_pair(starting_point_array_nums, ending_point_array_nums);
     }
 
 

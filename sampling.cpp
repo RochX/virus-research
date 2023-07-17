@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Enter which virus to work on:\n";
     std::getline(std::cin, current_virus);
-    GeneratingVectorsForViruses::pickVirusType(current_virus, starting_generators, ending_generators);
+    GeneratingVectorsForViruses::pickVirusType(current_virus, starting_generators, ending_generators, curr_directory);
 
     if (starting_generators.empty() || ending_generators.empty()) {
         std::cout << "Virus inputted is either invalid or not implemented, aborting..." << std::endl;

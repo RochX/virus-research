@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 
 #include "EigenTypes.hpp"
@@ -7,7 +8,8 @@
 #define VIRUS_RESEARCH_GENERATINGVECTORSFORVIRUSES_HPP
 
 namespace GeneratingVectorsForViruses {
-    void pickVirusType(const std::string& virus_name, std::vector<EigenType::Vector6f>& starting_generators, std::vector<EigenType::Vector6f>& ending_generators);
+    std::pair<std::vector<int>, std::vector<int>> pickVirusType(const std::string &virus_name, std::vector<EigenType::Vector6f> &starting_generators,
+                                                                std::vector<EigenType::Vector6f> &ending_generators, const std::string &curr_directory);
 
     std::vector<EigenType::Vector6f> generatorsOfPhiX174Native();
     std::vector<EigenType::Vector6f> generatorsOfPhiX174Mature();
