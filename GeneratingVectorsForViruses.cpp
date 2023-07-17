@@ -98,6 +98,17 @@ namespace {
 
         return generators;
     }
+
+    void print_all_configs() {
+        initializePointArrayNumbers(point_array_numbering);
+        Eigen::IOFormat no_align (Eigen::StreamPrecision, Eigen::DontAlignCols, "\t");
+        for (int i = 1; i < point_array_numbering.size(); i++) {
+            std::pair<EigenType::Vector6f, EigenType::Vector6f> pair = point_array_numbering[i];
+            std::cout << "Config " << i << " base:\t\t" << pair.first.transpose().format(no_align) << std::endl;
+//            std::cout << "Config " << i << " translation:\t" << pair.second.transpose().format(no_align) << std::endl;
+        }
+    }
+
 }
 
 namespace GeneratingVectorsForViruses {
@@ -118,6 +129,18 @@ namespace GeneratingVectorsForViruses {
         else if (virus_name == "HK97") {
             starting_generators = generatorsOfHK97Native();
             ending_generators = generatorsOfHK97Mature();
+        }
+        else if (virus_name == "S-F") {
+            starting_generators.clear();
+            ending_generators.clear();
+            starting_generators.push_back(s);
+            ending_generators.push_back(f);
+        }
+        else if (virus_name == "S-B") {
+            starting_generators.clear();
+            ending_generators.clear();
+            starting_generators.push_back(s);
+            ending_generators.push_back(b);
         }
         else if (virus_name == "SC_FCC_D10") {
             starting_generators = startingGeneratorsOfSC_TO_FCC_D10();
@@ -170,6 +193,9 @@ namespace GeneratingVectorsForViruses {
         else if (virus_name == "HE71_N-A") {
             starting_generators = generatorsOfHE71Native();
             ending_generators = generatorsOfHE71Aparticle();
+        }
+        else if (virus_name == "print all configs") {
+            print_all_configs();
         }
     }
 
