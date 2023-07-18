@@ -73,10 +73,50 @@ namespace {
         point_array_numbering[55] = std::make_pair(D.inverse()*f, s);
     }
 
-    std::vector<EigenType::Vector6f> createGeneratorsFromPointArrayNumbers(const std::vector<int>& point_array_nums) {
+    std::vector<EigenType::Vector6f> createGeneratorsFromPointArrayNumbers(std::vector<int>& point_array_nums, const std::string& state) {
         std::vector<EigenType::Vector6f> bases;
         std::vector<EigenType::Vector6f> translations;
         std::pair<EigenType::Vector6f, EigenType::Vector6f> base_translation_pair;
+
+        if (!point_array_nums.empty()) {
+            std::cout << "The " << state << " state uses config numbers:\t";
+            for (int num: point_array_nums)
+                std::cout << num << " ";
+            std::cout << std::endl;
+            int num_to_remove;
+            do {
+                std::cout << "Enter number to remove, end by entering 0\n";
+                std::string line;
+                std::getline(std::cin, line);
+
+                try {
+                    num_to_remove = std::stoi(line);
+                }
+                catch (const std::invalid_argument &e) {
+                    std::cout << "Invalid number.\n";
+                    num_to_remove = -1;
+                }
+                catch (const std::out_of_range &e) {
+                    std::cout << e.what() << std::endl;
+                    num_to_remove = -1;
+                }
+
+                if (num_to_remove == 0)
+                    break;
+
+                auto it = std::find(point_array_nums.begin(), point_array_nums.end(), num_to_remove);
+                if (it != point_array_nums.end())
+                    point_array_nums.erase(it);
+                else
+                    std::cout << "Element not found.\n";
+
+            } while (true);
+        }
+        std::cout << "The " << state << " state will now use numbers:\t";
+        for (int num: point_array_nums)
+            std::cout << num << " ";
+        std::cout << std::endl;
+
         for (int point_array_num : point_array_nums) {
             base_translation_pair = point_array_numbering[point_array_num];
 
@@ -161,26 +201,9 @@ namespace GeneratingVectorsForViruses {
         }
 
         if (!starting_point_array_nums.empty() && !ending_point_array_nums.empty()) {
-            starting_generators = createGeneratorsFromPointArrayNumbers(starting_point_array_nums);
-            ending_generators = createGeneratorsFromPointArrayNumbers(ending_point_array_nums);
+            starting_generators = createGeneratorsFromPointArrayNumbers(starting_point_array_nums, "starting");
+            ending_generators = createGeneratorsFromPointArrayNumbers(ending_point_array_nums, "ending");
             return std::make_pair(starting_point_array_nums, ending_point_array_nums);
-        }
-
-        if (virus_name == "PhiX174") {
-            starting_generators = generatorsOfPhiX174Native();
-            ending_generators = generatorsOfPhiX174Mature();
-        }
-        else if (virus_name == "CCMV") {
-            starting_generators = generatorsOfCCMVNative();
-            ending_generators = generatorsOfCCMVMature();
-        }
-        else if (virus_name == "TCV") {
-            starting_generators = generatorsOfTCVNative();
-            ending_generators = generatorsOfTCVMature();
-        }
-        else if (virus_name == "HK97") {
-            starting_generators = generatorsOfHK97Native();
-            ending_generators = generatorsOfHK97Mature();
         }
         else if (virus_name == "S-F") {
             starting_generators.clear();
@@ -210,42 +233,6 @@ namespace GeneratingVectorsForViruses {
             starting_generators = generatorsOf1044();
             ending_generators = generatorsOf1227();
         }
-        else if (virus_name == "CVA10_N-M") {
-            starting_generators = generatorsOfCVA10Native();
-            ending_generators = generatorsOfCVA10Mature();
-        }
-        else if (virus_name == "CVA10_M-A") {
-            starting_generators = generatorsOfCVA10Mature();
-            ending_generators = generatorsOfCVA10Aparticle();
-        }
-        else if (virus_name == "CVA10_N-A") {
-            starting_generators = generatorsOfCVA10Native();
-            ending_generators = generatorsOfCVA10Aparticle();
-        }
-        else if (virus_name == "D68_N-M") {
-            starting_generators = generatorsOfD68Native();
-            ending_generators = generatorsOfD68Mature();
-        }
-        else if (virus_name == "D68_M-A") {
-            starting_generators = generatorsOfD68Mature();
-            ending_generators = generatorsOfD68Aparticle();
-        }
-        else if (virus_name == "D68_N-A") {
-            starting_generators = generatorsOfD68Native();
-            ending_generators = generatorsOfD68Aparticle();
-        }
-        else if (virus_name == "HE71_N-M") {
-            starting_generators = generatorsOfHE71Native();
-            ending_generators = generatorsOfHE71Mature();
-        }
-        else if (virus_name == "HE71_M-A") {
-            starting_generators = generatorsOfHE71Mature();
-            ending_generators = generatorsOfHE71Aparticle();
-        }
-        else if (virus_name == "HE71_N-A") {
-            starting_generators = generatorsOfHE71Native();
-            ending_generators = generatorsOfHE71Aparticle();
-        }
         else if (virus_name == "print all configs") {
             print_all_configs();
         }
@@ -253,27 +240,6 @@ namespace GeneratingVectorsForViruses {
         return std::make_pair(starting_point_array_nums, ending_point_array_nums);
     }
 
-
-
-    std::vector<EigenType::Vector6f> generatorsOfCCMVNative() {
-        std::vector<int> point_array_nums {10};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-
-    std::vector<EigenType::Vector6f> generatorsOfCCMVMature() {
-        std::vector<int> point_array_nums {27};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-
-    std::vector<EigenType::Vector6f> generatorsOfTCVNative() {
-        std::vector<int> point_array_nums {8, 25, 47};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-
-    std::vector<EigenType::Vector6f> generatorsOfTCVMature() {
-        std::vector<int> point_array_nums {29, 13, 30, 55};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
 
     std::vector<EigenType::Vector6f> startingGeneratorsOfSC_TO_FCC_D10() {
         std::vector<EigenType::Vector6f> generators;
@@ -345,65 +311,5 @@ namespace GeneratingVectorsForViruses {
         generators.push_back(w);
         generators.push_back(t);
         return generators;
-    }
-
-    std::vector<EigenType::Vector6f> generatorsOfPhiX174Native() {
-        std::vector<int> point_array_nums {55};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-
-    std::vector<EigenType::Vector6f> generatorsOfPhiX174Mature() {
-        std::vector<int> point_array_nums {12, 52, 29, 53};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-
-    std::vector<EigenType::Vector6f> generatorsOfHK97Native() {
-        std::vector<int> point_array_nums {13, 55};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-
-    std::vector<EigenType::Vector6f> generatorsOfHK97Mature() {
-        std::vector<int> point_array_nums {13, 30, 55};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-
-    std::vector<EigenType::Vector6f> generatorsOfCVA10Native() {
-        std::vector<int> point_array_nums {1, 2};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-    std::vector<EigenType::Vector6f> generatorsOfCVA10Mature() {
-        std::vector<int> point_array_nums {54, 55};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-    std::vector<EigenType::Vector6f> generatorsOfCVA10Aparticle() {
-        std::vector<int> point_array_nums {12, 53, 13};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-
-    std::vector<EigenType::Vector6f> generatorsOfD68Native() {
-        std::vector<int> point_array_nums {11, 51};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-    std::vector<EigenType::Vector6f> generatorsOfD68Mature() {
-        std::vector<int> point_array_nums {13, 54};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-    std::vector<EigenType::Vector6f> generatorsOfD68Aparticle() {
-        std::vector<int> point_array_nums {1, 16, 3};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-
-    std::vector<EigenType::Vector6f> generatorsOfHE71Native() {
-        std::vector<int> point_array_nums {55};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-
-    std::vector<EigenType::Vector6f> generatorsOfHE71Mature() {
-        std::vector<int> point_array_nums {1, 3, 18};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
-    }
-    std::vector<EigenType::Vector6f> generatorsOfHE71Aparticle() {
-        std::vector<int> point_array_nums {13, 54};
-        return createGeneratorsFromPointArrayNumbers(point_array_nums);
     }
 } // GeneratingVectorsForViruses
