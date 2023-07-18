@@ -157,10 +157,10 @@ namespace {
         fout << "HK97\n13,55\n13,30,55\n";
         fout << "CVA10_N-M\n1,2\n54,55\n";
         fout << "CVA10_M-A\n54,55\n12,53,13\n";
-        fout << "CVA10_N-A\n1,2\n,12,53,13\n";
+        fout << "CVA10_N-A\n1,2\n12,53,13\n";
         fout << "D68_N-M\n11,51\n13,54\n";
         fout << "D68_M-A\n13,54\n1,16,3\n";
-        fout << "D68_N-A\n11,51\n,1,16,3\n";
+        fout << "D68_N-A\n11,51\n1,16,3\n";
         fout << "HE71_N-M\n55\n1,3,18\n";
         fout << "HE71_M-A\n1,3,18\n13,54\n";
         fout << "HE71_N-A\n55\n12,53,13\n";
