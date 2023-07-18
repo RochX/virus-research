@@ -28,6 +28,13 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
+    bool print_inverse = false;
+    std::cout << "Output T^{-1} along with outputs?\n(Y/N):";
+    std::getline(std::cin, line);
+    if (line == "Y" || line == "y") {
+        print_inverse = true;
+    }
+
     const std::string OUTPUT_FILE_NAME = curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + "_" + std::to_string(b0_cols) + "_cols.txt";
     std::cout << "Getting T and B0 matrices that worked for group " + centralizer_to_check + " on virus " + current_virus + " from file...\n";
     std::ifstream fin (OUTPUT_FILE_NAME);
@@ -37,7 +44,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    outputResults::outputXcolB0(fin, b0_cols);
+    outputResults::outputXcolB0(fin, b0_cols, print_inverse);
     fin.close();
     std::cout << "Done with file.\n";
 }
