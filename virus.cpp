@@ -740,11 +740,14 @@ bool verifyProductComesFromEndingOrbits(const Matrix6f &transition_matrix, const
     // check for a representative from each orbit
     int orbits_represented = 0;
     bool curr_orbit_done;
+    // each column should only represent one column
+    std::vector<bool> col_done (product.cols(), false);
     for (const std::vector<Vector6f>& orbit : ending_orbits) {
         curr_orbit_done = false;
         for (const Vector6f& vector : orbit) {
             for (int i = 0; i < product.cols(); i++) {
-                if (vector.isApprox(product.col(i))) {
+                if (!col_done[i] && vector.isApprox(product.col(i))) {
+                    col_done[i] = true;
                     orbits_represented++;
                     curr_orbit_done = true;
                     break;
