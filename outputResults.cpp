@@ -54,7 +54,7 @@ void outputResults::output6colB0(std::ifstream& fin) {
     fin.close();
 }
 
-void outputResults::outputXcolB0(std::ifstream &fin, int num_cols) {
+void outputResults::outputXcolB0(std::ifstream &fin, int num_cols, bool print_T_inverse) {
     Matrix6f transition;
     Matrix6f b0, prod;
     std::string count_s, blank;
@@ -76,7 +76,15 @@ void outputResults::outputXcolB0(std::ifstream &fin, int num_cols) {
         std::cout << "\tB0:" << std::endl;
         std::cout << b0.block(0,0,6,num_cols).format(EigenType::TAB_INDENT) << std::endl;
         std::cout << "\tT*B0:" << std::endl;
-        std::cout << prod.block(0,0,6,num_cols).format(EigenType::TAB_INDENT) << std::endl << std::endl;
+        std::cout << prod.block(0,0,6,num_cols).format(EigenType::TAB_INDENT) << std::endl;
+        if (print_T_inverse) {
+            std::cout << "\tT^{-1}" << std::endl;
+            Matrix6f Tinv = transition.inverse();
+            MatrixFunctions::fixZeroEntries(Tinv);
+            std::cout << Tinv.format(EigenType::TAB_INDENT) << std::endl;
+            std::cout << "\t" << transition.determinant() << std::endl;
+        }
+        std::cout << std::endl;
     }
 
     if (file_empty)
