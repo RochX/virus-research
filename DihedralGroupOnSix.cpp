@@ -26,7 +26,7 @@ EigenType::Matrix6f DihedralGroupOnSix::matrixFormOfCentralizer(float x, float y
     c << u, w, -w, x, s, s,
         -t, y, v, -v, z, -t,
         t, v, y, v, t, -z,
-        z, -v, v, y, -t, t,
+        z, -v, v, y, -t, -t,
         s, x, -w, w, u, s,
         s, w, -x, w, s, u;
     return c;
