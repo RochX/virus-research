@@ -225,7 +225,20 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "Number of candidate transition matrices: " << possible_transition_matrices.size() << std::endl << std::endl;
 
-    const std::string OUTPUT_FILE_NAME = curr_directory + current_virus + "_T_and_B0_pairs_" + centralizer_to_check + "_" + std::to_string(b0_cols) + "_cols.txt";
+    auto int_vector_to_str = [](const std::vector<int>& vec) {
+        std::string str;
+        for (auto x : vec) {
+            str += std::to_string(x);
+            if (x != vec.back())
+                str += ",";
+        }
+        return str;
+    };
+
+    std::string starting_config_str = int_vector_to_str(starting_config_nums);
+    std::string ending_config_str = int_vector_to_str(ending_config_nums);
+
+    const std::string OUTPUT_FILE_NAME = curr_directory + current_virus + "_" + starting_config_str + "_to_" + ending_config_str + "_T_and_B0_pairs_" + centralizer_to_check + "_" + std::to_string(b0_cols) + "_cols.txt";
     std::ofstream fout (OUTPUT_FILE_NAME);
 
     std::vector<Matrix6f> possible_B0_matrices;
@@ -320,6 +333,7 @@ int main(int argc, char *argv[]) {
             std::cout << ", ";
     }
     std::cout << std::endl;
+    std::cout << "\tOutputted to:\t" + OUTPUT_FILE_NAME;
 }
 
 
