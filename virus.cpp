@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
             std::cout << ", ";
     }
     std::cout << std::endl;
-    std::cout << "\tOutputted to:\t" + OUTPUT_FILE_NAME;
+    std::cout << "\tOutputted to:\t" + OUTPUT_FILE_NAME << std::endl;
 }
 
 
