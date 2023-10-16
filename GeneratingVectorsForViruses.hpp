@@ -8,6 +8,8 @@
 #define VIRUS_RESEARCH_GENERATINGVECTORSFORVIRUSES_HPP
 
 namespace GeneratingVectorsForViruses {
+    std::pair<EigenType::Vector6f, EigenType::Vector6f> getPointArrayGenerators(int x);
+
     std::pair<std::vector<int>, std::vector<int>> pickVirusType(const std::string &virus_name, std::vector<EigenType::Vector6f> &starting_generators,
                                                                 std::vector<EigenType::Vector6f> &ending_generators, const std::string &curr_directory);
     std::vector<EigenType::Vector6f> startingGeneratorsOfSC_TO_FCC_D10();

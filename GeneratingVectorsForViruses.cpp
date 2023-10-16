@@ -1,6 +1,6 @@
 #include "GeneratingVectorsForViruses.hpp"
 
-std::vector<std::pair<EigenType::Vector6f, EigenType::Vector6f>> point_array_numbering;
+std::vector<std::pair<EigenType::Vector6f, EigenType::Vector6f>> point_array_configurations;
 EigenType::Matrix6f TwoD {{1,1,-1,-1,1,1},
                        {1, 1, 1, -1, -1, 1},
                        {-1, 1, 1, 1, -1, 1},
@@ -118,7 +118,7 @@ namespace {
         std::cout << std::endl;
 
         for (int point_array_num : point_array_nums) {
-            base_translation_pair = point_array_numbering[point_array_num];
+            base_translation_pair = point_array_configurations[point_array_num];
 
             // we can have multiple of the same base
             bases.push_back(base_translation_pair.first);
@@ -140,10 +140,10 @@ namespace {
     }
 
     void print_all_configs() {
-        initializePointArrayNumbers(point_array_numbering);
+        initializePointArrayNumbers(point_array_configurations);
         Eigen::IOFormat no_align (Eigen::StreamPrecision, Eigen::DontAlignCols, "\t");
-        for (int i = 1; i < point_array_numbering.size(); i++) {
-            std::pair<EigenType::Vector6f, EigenType::Vector6f> pair = point_array_numbering[i];
+        for (int i = 1; i < point_array_configurations.size(); i++) {
+            std::pair<EigenType::Vector6f, EigenType::Vector6f> pair = point_array_configurations[i];
             std::cout << "Config " << i << " base:\t\t" << pair.first.transpose().format(no_align) << std::endl;
 //            std::cout << "Config " << i << " translation:\t" << pair.second.transpose().format(no_align) << std::endl;
         }
@@ -187,7 +187,7 @@ namespace GeneratingVectorsForViruses {
     std::pair<std::vector<int>, std::vector<int>> pickVirusType(const std::string &virus_name, std::vector<EigenType::Vector6f> &starting_generators,
                                                                 std::vector<EigenType::Vector6f> &ending_generators, const std::string &curr_directory) {
         const std::string VIRUS_CONFIG_FILE_NAME = curr_directory + "virus_configs.txt";
-        initializePointArrayNumbers(point_array_numbering);
+        initializePointArrayNumbers(point_array_configurations);
         initializeVirusConfigFile(VIRUS_CONFIG_FILE_NAME);
         std::ifstream fin (VIRUS_CONFIG_FILE_NAME);
         std::string line;
@@ -311,5 +311,11 @@ namespace GeneratingVectorsForViruses {
         generators.push_back(w);
         generators.push_back(t);
         return generators;
+    }
+
+    std::pair<EigenType::Vector6f, EigenType::Vector6f> getPointArrayGenerators(int x) {
+        if (point_array_configurations.empty())
+            initializePointArrayNumbers(point_array_configurations);
+        return point_array_configurations[x];
     }
 } // GeneratingVectorsForViruses
